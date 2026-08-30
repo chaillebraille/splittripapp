@@ -27,8 +27,8 @@ function initialFromName(name: string) {
   const trimmed = name.trim();
   if (!trimmed) return "";
   const parts = trimmed.split(/\s+/);
-  if (parts.length > 1) {
-    return (parts[0]![0] + parts[1]![0]).toUpperCase();
+  if (parts.length > 1 && parts[0] && parts[1]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
   return trimmed.slice(0, 1).toUpperCase();
 }
