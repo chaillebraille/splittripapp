@@ -5,10 +5,13 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-provider";
 import { bootstrapAdmin, getSetupStatus } from "@/lib/admin.functions";
+import { usernameToEmail, validateUsername } from "@/lib/username";
+import { generatePassword, validatePassword } from "@/lib/password";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
