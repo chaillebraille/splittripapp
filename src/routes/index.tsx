@@ -28,7 +28,6 @@ function HomePage() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
       <header className="px-6 pt-8 pb-4">
         <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
-        <p className="mt-1 text-muted-foreground">Share travel expenses fairly.</p>
       </header>
 
       <main className="flex-1 px-6 pb-24">
