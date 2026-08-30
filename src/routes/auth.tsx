@@ -5,10 +5,13 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-provider";
 import { bootstrapAdmin, getSetupStatus } from "@/lib/admin.functions";
+import { usernameToEmail, validateUsername } from "@/lib/username";
+import { generatePassword, validatePassword } from "@/lib/password";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -40,10 +43,11 @@ function AuthPage() {
     queryFn: () => getSetupStatus(),
   });
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+
+  const needsSetup = setup?.needsSetup ?? false;
 
   useEffect(() => {
     if (isReady && userId) {
@@ -51,17 +55,26 @@ function AuthPage() {
     }
   }, [isReady, userId, destination, navigate]);
 
+  // Suggest a strong password when creating the very first admin account.
+  useEffect(() => {
+    if (needsSetup && !password) setPassword(generatePassword());
+  }, [needsSetup, password]);
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (isBusy) return;
     setIsBusy(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: usernameToEmail(username),
       password,
     });
     setIsBusy(false);
     if (error) {
-      toast.error(error.message === "Invalid login credentials" ? "Wrong email or password" : error.message);
+      toast.error(
+        error.message === "Invalid login credentials"
+          ? "Wrong username or password"
+          : error.message,
+      );
     }
     // On success the auth listener flips userId and the effect navigates.
   }
@@ -69,13 +82,21 @@ function AuthPage() {
   async function handleBootstrap(e: React.FormEvent) {
     e.preventDefault();
     if (isBusy) return;
+    const nameError = validateUsername(username);
+    if (nameError) {
+      toast.error(nameError);
+      return;
+    }
+    const pwError = validatePassword(password);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
     setIsBusy(true);
     try {
-      await bootstrapAdmin({
-        data: { email: email.trim(), password, displayName: displayName.trim() || email.trim() },
-      });
+      await bootstrapAdmin({ data: { username: username.trim(), password } });
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: usernameToEmail(username),
         password,
       });
       if (error) throw error;
@@ -85,8 +106,6 @@ function AuthPage() {
       setIsBusy(false);
     }
   }
-
-  const needsSetup = setup?.needsSetup ?? false;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center bg-background px-6 pb-16">
@@ -101,45 +120,43 @@ function AuthPage() {
         onSubmit={needsSetup ? handleBootstrap : handleSignIn}
         className="space-y-4 rounded-2xl bg-card p-6 shadow-sm"
       >
-        {needsSetup && (
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Your name</Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Alex"
-              className="rounded-xl"
-              autoComplete="name"
-            />
-          </div>
-        )}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="username">Username</Label>
           <Input
-            id="email"
-            type="email"
+            id="username"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s+/gu, ""))}
+            placeholder="e.g. alex.k"
             className="rounded-xl"
-            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="username"
           />
+          {needsSetup && (
+            <p className="text-xs text-muted-foreground">
+              One word — letters, digits, period, underscore or hyphen. No spaces.
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
-            type="password"
+            type={needsSetup ? "text" : "password"}
             required
-            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={needsSetup ? "At least 8 characters" : "Your password"}
-            className="rounded-xl"
+            placeholder={needsSetup ? "At least 12 characters" : "Your password"}
+            className={needsSetup ? "rounded-xl font-mono" : "rounded-xl"}
             autoComplete={needsSetup ? "new-password" : "current-password"}
           />
+          {needsSetup && (
+            <p className="text-xs text-muted-foreground">
+              Suggested password — you can replace it. Write it down.
+            </p>
+          )}
         </div>
         <Button
           type="submit"
@@ -156,4 +173,5 @@ function AuthPage() {
       </form>
     </div>
   );
+
 }

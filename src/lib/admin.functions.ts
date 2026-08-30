@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { parseUsername, usernameToEmail } from "@/lib/username";
+
+
 
 type AdminContext = { supabase: any; userId: string };
 
@@ -31,9 +34,8 @@ export const bootstrapAdmin = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
       .object({
-        email: z.string().email(),
-        password: z.string().min(8),
-        displayName: z.string().min(1).max(60),
+        username: z.string().transform((v) => parseUsername(v)),
+        password: z.string().min(12),
       })
       .parse(data),
   )
@@ -49,10 +51,10 @@ export const bootstrapAdmin = createServerFn({ method: "POST" })
     }
 
     const { data: created, error } = await admin.auth.admin.createUser({
-      email: data.email,
+      email: usernameToEmail(data.username),
       password: data.password,
       email_confirm: true,
-      user_metadata: { display_name: data.displayName },
+      user_metadata: { username: data.username, display_name: data.username },
     });
     if (error) throw new Error(error.message);
 
@@ -76,46 +78,58 @@ export const listUsers = createServerFn({ method: "GET" })
     );
     return (data?.users ?? [])
       .filter((u) => !u.is_anonymous)
-      .map((u) => ({
-        id: u.id,
-        email: u.email ?? "",
-        display_name:
-          ((u.user_metadata as { display_name?: string } | null)?.display_name ?? "").trim() ||
-          (u.email ?? ""),
-        created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at ?? null,
-        disabled: Boolean((u as { banned_until?: string | null }).banned_until),
-        is_admin: adminIds.has(u.id),
-      }));
+      .map((u) => {
+        const meta = u.user_metadata as
+          | { username?: string; display_name?: string }
+          | null;
+        return {
+          id: u.id,
+          username:
+            (meta?.username ?? "").trim() ||
+            (meta?.display_name ?? "").trim() ||
+            (u.email ?? "").split("@")[0] ||
+            "user",
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at ?? null,
+          disabled: Boolean((u as { banned_until?: string | null }).banned_until),
+          is_admin: adminIds.has(u.id),
+        };
+      });
   });
-
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  displayName: z.string().min(1).max(60),
-});
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => credentialsSchema.parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        username: z.string().transform((v) => parseUsername(v)),
+        password: z.string().min(12),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const admin = await loadAdmin();
     const { error } = await admin.auth.admin.createUser({
-      email: data.email,
+      email: usernameToEmail(data.username),
       password: data.password,
       email_confirm: true,
-      user_metadata: { display_name: data.displayName },
+      user_metadata: { username: data.username, display_name: data.username },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(
+        /already/i.test(error.message) ? "That username is taken" : error.message,
+      );
+    }
     return { success: true };
   });
 
 export const adminResetPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ userId: z.string().uuid(), password: z.string().min(8) }).parse(data),
+    z.object({ userId: z.string().uuid(), password: z.string().min(12) }).parse(data),
   )
+
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const admin = await loadAdmin();

@@ -1,16 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, KeyRound, Plus, ShieldCheck, Trash2, UserX, UserCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  KeyRound,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  UserX,
+  UserCheck,
+} from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-provider";
 import {
@@ -20,6 +29,8 @@ import {
   adminSetUserDisabled,
   listUsers,
 } from "@/lib/admin.functions";
+import { generatePassword, validatePassword } from "@/lib/password";
+import { validateUsername } from "@/lib/username";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,12 +49,6 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-function generatePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
-}
-
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -55,14 +60,15 @@ function AdminPage() {
     enabled: isReady && isAdmin,
   });
 
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [newPassword, setNewPassword] = useState(() => generatePassword());
   const [isBusy, setIsBusy] = useState(false);
   const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
   const sortedUsers = [...users].sort((a, b) =>
-    a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
+    a.username.localeCompare(b.username, undefined, { sensitivity: "base" }),
   );
 
   async function refresh() {
@@ -72,15 +78,22 @@ function AdminPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (isBusy) return;
+    const nameError = validateUsername(username);
+    if (nameError) {
+      toast.error(nameError);
+      return;
+    }
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
     setIsBusy(true);
-    const password = generatePassword();
     try {
-      await adminCreateUser({
-        data: { email: email.trim(), password, displayName: displayName.trim() || email.trim() },
-      });
-      toast.success(`Account created. Password: ${password}`, { duration: 20000 });
-      setEmail("");
-      setDisplayName("");
+      await adminCreateUser({ data: { username: username.trim(), password: newPassword } });
+      toast.success(`Account created. Password: ${newPassword}`, { duration: 20000 });
+      setUsername("");
+      setNewPassword(generatePassword());
       await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create the user");
@@ -103,11 +116,10 @@ function AdminPage() {
     }
   }
 
-  async function handleResetPassword(userId: string, userEmail: string) {
-    const password = generatePassword();
+  async function handleResetPassword(targetId: string, label: string, password: string) {
     try {
-      await adminResetPassword({ data: { userId, password } });
-      toast.success(`New password for ${userEmail}: ${password}`, { duration: 20000 });
+      await adminResetPassword({ data: { userId: targetId, password } });
+      toast.success(`New password for ${label}: ${password}`, { duration: 20000 });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not reset the password");
     }
@@ -160,38 +172,56 @@ function AdminPage() {
         <form onSubmit={handleCreate} className="space-y-3 rounded-2xl bg-card p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-card-foreground">New user</h2>
           <div className="space-y-2">
-            <Label htmlFor="new-name">Name</Label>
+            <Label htmlFor="new-username">Username</Label>
             <Input
-              id="new-name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Alex"
+              id="new-username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value.replace(/\s+/gu, ""))}
+              placeholder="e.g. alex.k"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               className="rounded-xl"
             />
+            <p className="text-xs text-muted-foreground">
+              One word — letters, digits, period, underscore or hyphen. No spaces.
+            </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-email">Email</Label>
-            <Input
-              id="new-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="friend@example.com"
-              className="rounded-xl"
-            />
+            <Label htmlFor="new-password">Password</Label>
+            <div className="flex gap-2">
+              <Input
+                id="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="rounded-xl font-mono"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Generate another password"
+                className="shrink-0 rounded-xl"
+                onClick={() => setNewPassword(generatePassword())}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Suggested password — you can replace it (min. 12 characters, mixed types).
+            </p>
           </div>
           <Button
             type="submit"
-            disabled={isBusy || !email.trim()}
+            disabled={isBusy || !username.trim()}
             className="w-full rounded-xl bg-primary text-primary-foreground"
           >
             <Plus className="mr-2 h-4 w-4" />
             Create account
           </Button>
-          <p className="text-xs text-muted-foreground">
-            A password is generated and shown to you once — pass it on to the user.
-          </p>
         </form>
 
         <section className="space-y-3">
@@ -203,10 +233,7 @@ function AdminPage() {
               <div key={user.id} className="rounded-2xl bg-card p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-card-foreground">
-                      {user.display_name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    <p className="truncate font-medium text-card-foreground">{user.username}</p>
                     <p className="text-xs text-muted-foreground">
                       {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
                       {user.last_sign_in_at
@@ -220,8 +247,11 @@ function AdminPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={`Reset password for ${user.display_name}`}
-                      onClick={() => setResetTarget({ id: user.id, label: user.display_name })}
+                      aria-label={`Reset password for ${user.username}`}
+                      onClick={() => {
+                        setResetPassword(generatePassword());
+                        setResetTarget({ id: user.id, label: user.username });
+                      }}
                     >
                       <KeyRound className="h-4 w-4" />
                     </Button>
@@ -233,8 +263,8 @@ function AdminPage() {
                           size="icon"
                           aria-label={
                             user.disabled
-                              ? `Re-enable ${user.display_name}`
-                              : `Disable ${user.display_name}`
+                              ? `Re-enable ${user.username}`
+                              : `Disable ${user.username}`
                           }
                           onClick={() => void handleToggleDisabled(user.id, user.disabled)}
                         >
@@ -248,8 +278,8 @@ function AdminPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          aria-label={`Delete ${user.display_name}`}
-                          onClick={() => setDeleteTarget({ id: user.id, label: user.display_name })}
+                          aria-label={`Delete ${user.username}`}
+                          onClick={() => setDeleteTarget({ id: user.id, label: user.username })}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -275,11 +305,41 @@ function AdminPage() {
               shown to you once — pass it on.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reset-password">New password</Label>
+            <div className="flex gap-2">
+              <Input
+                id="reset-password"
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                className="rounded-xl font-mono"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Generate another password"
+                className="shrink-0 rounded-xl"
+                onClick={() => setResetPassword(generatePassword())}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (resetTarget) void handleResetPassword(resetTarget.id, resetTarget.label);
+              onClick={(e) => {
+                const pwError = validatePassword(resetPassword);
+                if (pwError) {
+                  e.preventDefault();
+                  toast.error(pwError);
+                  return;
+                }
+                if (resetTarget)
+                  void handleResetPassword(resetTarget.id, resetTarget.label, resetPassword);
                 setResetTarget(null);
               }}
             >
