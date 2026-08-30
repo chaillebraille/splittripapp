@@ -44,7 +44,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
 
 ## Out of Scope
 - Authentication/login gates (data is per-device/local-anon for simplicity unless you want accounts).
-- Receipt photos, chat, percentages, unequal splits, multi-currency per expense.
+- Receipt photos, chat, percentages, multi-currency per expense.
 - Offline caching beyond installability.
 
 ## Next Step
