@@ -44,6 +44,7 @@ export const createGroup = createServerFn({ method: "POST" })
         created_by: context.userId,
         name: data.name,
         settle_currency: data.settle_currency.toUpperCase(),
+        image_url: data.image_url ?? null,
       })
       .select()
       .single();
