@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups/$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups/new'
+import { Route as GroupsGroupIdSettleRouteImport } from './routes/groups/$groupId/settle'
 import { Route as GroupsGroupIdExpensesNewRouteImport } from './routes/groups/$groupId/expenses/new'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const GroupsNewRoute = GroupsNewRouteImport.update({
   path: '/groups/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupsGroupIdSettleRoute = GroupsGroupIdSettleRouteImport.update({
+  id: '/settle',
+  path: '/settle',
+  getParentRoute: () => GroupsGroupIdRoute,
+} as any)
 const GroupsGroupIdExpensesNewRoute =
   GroupsGroupIdExpensesNewRouteImport.update({
     id: '/expenses/new',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/groups/$groupId': typeof GroupsGroupIdRouteWithChildren
   '/groups/new': typeof GroupsNewRoute
+  '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/groups/$groupId': typeof GroupsGroupIdRouteWithChildren
   '/groups/new': typeof GroupsNewRoute
+  '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
 }
 export interface FileRoutesById {
@@ -53,19 +61,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/groups/$groupId': typeof GroupsGroupIdRouteWithChildren
   '/groups/new': typeof GroupsNewRoute
+  '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/groups/$groupId' | '/groups/new' | '/groups/$groupId/expenses/new'
+    | '/'
+    | '/groups/$groupId'
+    | '/groups/new'
+    | '/groups/$groupId/settle'
+    | '/groups/$groupId/expenses/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/groups/$groupId' | '/groups/new' | '/groups/$groupId/expenses/new'
+  to:
+    | '/'
+    | '/groups/$groupId'
+    | '/groups/new'
+    | '/groups/$groupId/settle'
+    | '/groups/$groupId/expenses/new'
   id:
     | '__root__'
     | '/'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/groups/$groupId/settle'
     | '/groups/$groupId/expenses/new'
   fileRoutesById: FileRoutesById
 }
@@ -98,6 +117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GroupsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups/$groupId/settle': {
+      id: '/groups/$groupId/settle'
+      path: '/settle'
+      fullPath: '/groups/$groupId/settle'
+      preLoaderRoute: typeof GroupsGroupIdSettleRouteImport
+      parentRoute: typeof GroupsGroupIdRoute
+    }
     '/groups/$groupId/expenses/new': {
       id: '/groups/$groupId/expenses/new'
       path: '/expenses/new'
@@ -109,10 +135,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface GroupsGroupIdRouteChildren {
+  GroupsGroupIdSettleRoute: typeof GroupsGroupIdSettleRoute
   GroupsGroupIdExpensesNewRoute: typeof GroupsGroupIdExpensesNewRoute
 }
 
 const GroupsGroupIdRouteChildren: GroupsGroupIdRouteChildren = {
+  GroupsGroupIdSettleRoute: GroupsGroupIdSettleRoute,
   GroupsGroupIdExpensesNewRoute: GroupsGroupIdExpensesNewRoute,
 }
 
