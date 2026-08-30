@@ -47,6 +47,24 @@ export const deleteMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
+    const { count: paidCount, error: paidError } = await context.supabase
+      .from("expenses")
+      .select("id", { count: "exact", head: true })
+      .eq("payer_id", data.id);
+    if (paidError) throw new Error(paidError.message);
+
+    const { count: splitCount, error: splitError } = await context.supabase
+      .from("expense_splits")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", data.id);
+    if (splitError) throw new Error(splitError.message);
+
+    if ((paidCount ?? 0) > 0 || (splitCount ?? 0) > 0) {
+      throw new Error(
+        "This member is tied to existing expenses and can't be removed. Remove or reassign those expenses first."
+      );
+    }
+
     const { error } = await context.supabase.from("members").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { success: true };

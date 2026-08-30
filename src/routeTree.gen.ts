@@ -16,6 +16,7 @@ import { Route as GroupsGroupIdIndexRouteImport } from './routes/groups/$groupId
 import { Route as GroupsGroupIdProfileRouteImport } from './routes/groups/$groupId/profile'
 import { Route as GroupsGroupIdSettleRouteImport } from './routes/groups/$groupId/settle'
 import { Route as GroupsGroupIdExpensesNewRouteImport } from './routes/groups/$groupId/expenses/new'
+import { Route as GroupsGroupIdMembersMemberIdRouteImport } from './routes/groups/$groupId/members/$memberId'
 import { Route as GroupsGroupIdExpensesExpenseIdEditRouteImport } from './routes/groups/$groupId/expenses/$expenseId/edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -54,6 +55,12 @@ const GroupsGroupIdExpensesNewRoute =
     path: '/expenses/new',
     getParentRoute: () => GroupsGroupIdRoute,
   } as any)
+const GroupsGroupIdMembersMemberIdRoute =
+  GroupsGroupIdMembersMemberIdRouteImport.update({
+    id: '/members/$memberId',
+    path: '/members/$memberId',
+    getParentRoute: () => GroupsGroupIdRoute,
+  } as any)
 const GroupsGroupIdExpensesExpenseIdEditRoute =
   GroupsGroupIdExpensesExpenseIdEditRouteImport.update({
     id: '/expenses/$expenseId/edit',
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/': typeof GroupsGroupIdIndexRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/members/$memberId': typeof GroupsGroupIdMembersMemberIdRoute
   '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId': typeof GroupsGroupIdIndexRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/members/$memberId': typeof GroupsGroupIdMembersMemberIdRoute
   '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRoutesById {
@@ -89,6 +98,7 @@ export interface FileRoutesById {
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/': typeof GroupsGroupIdIndexRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/members/$memberId': typeof GroupsGroupIdMembersMemberIdRoute
   '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRouteTypes {
@@ -101,6 +111,7 @@ export interface FileRouteTypes {
     | '/groups/$groupId/settle'
     | '/groups/$groupId/'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/members/$memberId'
     | '/groups/$groupId/expenses/$expenseId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +121,7 @@ export interface FileRouteTypes {
     | '/groups/$groupId/settle'
     | '/groups/$groupId'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/members/$memberId'
     | '/groups/$groupId/expenses/$expenseId/edit'
   id:
     | '__root__'
@@ -120,6 +132,7 @@ export interface FileRouteTypes {
     | '/groups/$groupId/settle'
     | '/groups/$groupId/'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/members/$memberId'
     | '/groups/$groupId/expenses/$expenseId/edit'
   fileRoutesById: FileRoutesById
 }
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GroupsGroupIdExpensesNewRouteImport
       parentRoute: typeof GroupsGroupIdRoute
     }
+    '/groups/$groupId/members/$memberId': {
+      id: '/groups/$groupId/members/$memberId'
+      path: '/members/$memberId'
+      fullPath: '/groups/$groupId/members/$memberId'
+      preLoaderRoute: typeof GroupsGroupIdMembersMemberIdRouteImport
+      parentRoute: typeof GroupsGroupIdRoute
+    }
     '/groups/$groupId/expenses/$expenseId/edit': {
       id: '/groups/$groupId/expenses/$expenseId/edit'
       path: '/expenses/$expenseId/edit'
@@ -195,6 +215,7 @@ interface GroupsGroupIdRouteChildren {
   GroupsGroupIdSettleRoute: typeof GroupsGroupIdSettleRoute
   GroupsGroupIdIndexRoute: typeof GroupsGroupIdIndexRoute
   GroupsGroupIdExpensesNewRoute: typeof GroupsGroupIdExpensesNewRoute
+  GroupsGroupIdMembersMemberIdRoute: typeof GroupsGroupIdMembersMemberIdRoute
   GroupsGroupIdExpensesExpenseIdEditRoute: typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 
@@ -203,6 +224,7 @@ const GroupsGroupIdRouteChildren: GroupsGroupIdRouteChildren = {
   GroupsGroupIdSettleRoute: GroupsGroupIdSettleRoute,
   GroupsGroupIdIndexRoute: GroupsGroupIdIndexRoute,
   GroupsGroupIdExpensesNewRoute: GroupsGroupIdExpensesNewRoute,
+  GroupsGroupIdMembersMemberIdRoute: GroupsGroupIdMembersMemberIdRoute,
   GroupsGroupIdExpensesExpenseIdEditRoute:
     GroupsGroupIdExpensesExpenseIdEditRoute,
 }
