@@ -342,6 +342,44 @@ function AdminPage() {
         </section>
       </main>
 
+      <Dialog open={shareTarget !== null} onOpenChange={(open) => !open && setShareTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share app with {shareTarget}</DialogTitle>
+            <DialogDescription>
+              Send this link to {shareTarget}, or let them scan the QR code from your screen. They
+              sign in with their username and the password you set.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input readOnly value={shareUrl} className="rounded-xl font-mono text-xs" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Copy app link"
+              className="shrink-0 rounded-xl"
+              onClick={() => void handleCopyShare()}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex justify-center pt-2">
+            {shareQr ? (
+              <img
+                src={shareQr}
+                alt={`QR code linking to the SplitTrip sign-in page`}
+                className="h-56 w-56 rounded-xl border border-border"
+              />
+            ) : (
+              <div className="flex h-56 w-56 items-center justify-center rounded-xl border border-border text-sm text-muted-foreground">
+                Generating…
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog
         open={resetTarget !== null}
         onOpenChange={(open) => !open && setResetTarget(null)}
