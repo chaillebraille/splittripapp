@@ -162,17 +162,18 @@ function NewGroupPage() {
                 placeholder="Add a member"
                 className="rounded-xl"
               />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  addMember(newMemberName);
-                  setNewMemberName("");
-                }}
-                className="shrink-0 rounded-xl"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                addMember(newMemberName);
+                setNewMemberName("");
+              }}
+              aria-label="Add member"
+              className="shrink-0 rounded-xl"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
             </div>
 
             {suggestions.length > 0 && (
