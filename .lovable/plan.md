@@ -24,7 +24,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
    - Edit and delete expenses.
 4. **Settle up**
    - Suggested minimal payments to balance the group.
-   - Mark a payment as settled.
+   - Show minimal payment suggestions (no persistent "settled" state).
 5. **PWA**
    - `manifest.webmanifest` for home-screen install.
    - Theme color, app icons, standalone display.
