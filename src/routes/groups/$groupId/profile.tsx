@@ -99,7 +99,11 @@ function TripProfilePage() {
 
   async function handleRemoveMember(id: string) {
     try {
-      await removeMemberFn({ data: { id } });
+      const result = await removeMemberFn({ data: { id } });
+      if (!result.success) {
+        toast.error(result.error ?? "Could not remove member");
+        return;
+      }
       await refreshMembers();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not remove member");
