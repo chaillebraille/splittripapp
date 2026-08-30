@@ -79,6 +79,9 @@ export const listUsers = createServerFn({ method: "GET" })
       .map((u) => ({
         id: u.id,
         email: u.email ?? "",
+        display_name:
+          ((u.user_metadata as { display_name?: string } | null)?.display_name ?? "").trim() ||
+          (u.email ?? ""),
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at ?? null,
         disabled: Boolean((u as { banned_until?: string | null }).banned_until),
@@ -138,6 +141,20 @@ export const adminSetUserDisabled = createServerFn({ method: "POST" })
     const { error } = await admin.auth.admin.updateUserById(data.userId, {
       ban_duration: data.disabled ? "876000h" : "none",
     });
+    if (error) return { success: false as const, error: error.message };
+    return { success: true as const };
+  });
+
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      return { success: false as const, error: "You can't delete your own account" };
+    }
+    const admin = await loadAdmin();
+    const { error } = await admin.auth.admin.deleteUser(data.userId);
     if (error) return { success: false as const, error: error.message };
     return { success: true as const };
   });
