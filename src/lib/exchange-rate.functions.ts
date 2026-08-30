@@ -39,3 +39,11 @@ export const getExchangeRate = createServerFn({ method: "GET" })
 
     return { rate: toPerEur / fromPerEur };
   });
+
+/** Full "units per 1 EUR" table, cached offline by the client. */
+export const getRateTable = createServerFn({ method: "GET" }).handler(async () => {
+  const response = await fetch("https://api.frankfurter.app/latest?base=EUR");
+  if (!response.ok) throw new Error(`Exchange rate fetch failed: ${response.statusText}`);
+  const json = (await response.json()) as { rates: Record<string, number>; date: string };
+  return { perEur: { EUR: 1, ...json.rates }, date: json.date };
+});

@@ -29,6 +29,7 @@ export const getGroup = createServerFn({ method: "GET" })
   });
 
 const createGroupSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().min(1).max(100),
   settle_currency: z.string().min(1).max(3),
   image_url: z.string().max(400000).nullable().optional(),
@@ -41,6 +42,7 @@ export const createGroup = createServerFn({ method: "POST" })
     const { data: group, error } = await context.supabase
       .from("groups")
       .insert({
+        ...(data.id ? { id: data.id } : {}),
         created_by: context.userId,
         name: data.name,
         settle_currency: data.settle_currency.toUpperCase(),

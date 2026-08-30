@@ -17,6 +17,7 @@ export const listMembers = createServerFn({ method: "GET" })
   });
 
 const createMemberSchema = z.object({
+  id: z.string().uuid().optional(),
   group_id: z.string().uuid(),
   name: z.string().min(1).max(100),
   initial: z.string().max(2).optional(),
@@ -32,6 +33,7 @@ export const createMember = createServerFn({ method: "POST" })
     const { data: member, error } = await context.supabase
       .from("members")
       .insert({
+        ...(data.id ? { id: data.id } : {}),
         group_id: data.group_id,
         name: data.name.trim(),
         initial,

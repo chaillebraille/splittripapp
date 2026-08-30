@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SyncIndicator } from "@/components/SyncIndicator";
+import { registerAppServiceWorker } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -128,9 +130,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    registerAppServiceWorker();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <SyncIndicator />
         <Outlet />
         <Toaster />
       </AuthProvider>

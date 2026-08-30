@@ -1,10 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { getGroup, updateGroup } from "@/lib/groups.functions";
-import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/members.functions";
+import { getGroup, updateGroup } from "@/lib/data/groups";
+import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/data/members";
 import { TripImagePicker } from "@/components/TripImagePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,12 +39,12 @@ function TripProfilePage() {
   const { groupId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fetchGroup = useServerFn(getGroup);
-  const fetchMembers = useServerFn(listMembers);
-  const fetchSuggestions = useServerFn(suggestMembers);
-  const update = useServerFn(updateGroup);
-  const addMemberFn = useServerFn(createMember);
-  const removeMemberFn = useServerFn(deleteMember);
+  const fetchGroup = getGroup;
+  const fetchMembers = listMembers;
+  const fetchSuggestions = suggestMembers;
+  const update = updateGroup;
+  const addMemberFn = createMember;
+  const removeMemberFn = deleteMember;
 
   const { data: group } = useQuery({
     queryKey: ["group", groupId],

@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Plus, Users, Wallet } from "lucide-react";
 import { useState } from "react";
-import { getGroup, listGroups } from "@/lib/groups.functions";
-import { listMembers } from "@/lib/members.functions";
-import { deleteExpense, listExpenses } from "@/lib/expenses.functions";
-import { getBalances } from "@/lib/balances.functions";
+import { getGroup, listGroups } from "@/lib/data/groups";
+import { listMembers } from "@/lib/data/members";
+import { deleteExpense, listExpenses } from "@/lib/data/expenses";
+import { getBalances } from "@/lib/data/balances";
 import { ExpenseList } from "@/components/ExpenseList";
 import { toast } from "sonner";
 
@@ -28,12 +27,12 @@ export const Route = createFileRoute("/groups/$groupId/")({
 function GroupDashboardPage() {
   const { groupId } = Route.useParams();
   const queryClient = useQueryClient();
-  const fetchGroup = useServerFn(getGroup);
-  const fetchGroups = useServerFn(listGroups);
-  const fetchMembers = useServerFn(listMembers);
-  const fetchExpenses = useServerFn(listExpenses);
-  const fetchBalances = useServerFn(getBalances);
-  const deleteExpenseFn = useServerFn(deleteExpense);
+  const fetchGroup = getGroup;
+  const fetchGroups = listGroups;
+  const fetchMembers = listMembers;
+  const fetchExpenses = listExpenses;
+  const fetchBalances = getBalances;
+  const deleteExpenseFn = deleteExpense;
 
   const { data: groups = [] } = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
   const { data: group } = useQuery({

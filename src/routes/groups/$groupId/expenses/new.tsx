@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { getGroup } from "@/lib/groups.functions";
-import { listMembers, suggestMembers } from "@/lib/members.functions";
-import { createExpense, listExpenses } from "@/lib/expenses.functions";
-import { getExchangeRate } from "@/lib/exchange-rate.functions";
+import { getGroup } from "@/lib/data/groups";
+import { listMembers, suggestMembers } from "@/lib/data/members";
+import { createExpense, listExpenses } from "@/lib/data/expenses";
+import { getExchangeRate } from "@/lib/data/rates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +31,11 @@ function NewExpensePage() {
   const { groupId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fetchGroup = useServerFn(getGroup);
-  const fetchMembers = useServerFn(listMembers);
-  const fetchExpenses = useServerFn(listExpenses);
-  const fetchRate = useServerFn(getExchangeRate);
-  const create = useServerFn(createExpense);
+  const fetchGroup = getGroup;
+  const fetchMembers = listMembers;
+  const fetchExpenses = listExpenses;
+  const fetchRate = getExchangeRate;
+  const create = createExpense;
 
   const { data: group } = useQuery({
     queryKey: ["group", groupId],

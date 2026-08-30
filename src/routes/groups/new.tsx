@@ -2,9 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { createGroup } from "@/lib/groups.functions";
-import { createMember, suggestMembers } from "@/lib/members.functions";
+import { createGroup } from "@/lib/data/groups";
+import { createMember, suggestMembers } from "@/lib/data/members";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,9 +38,9 @@ function initialFromName(name: string) {
 
 function NewGroupPage() {
   const navigate = useNavigate();
-  const createGroupFn = useServerFn(createGroup);
-  const createMemberFn = useServerFn(createMember);
-  const fetchSuggestions = useServerFn(suggestMembers);
+  const createGroupFn = createGroup;
+  const createMemberFn = createMember;
+  const fetchSuggestions = suggestMembers;
 
   const { data: suggestions = [] } = useQuery({
     queryKey: ["member-suggestions"],

@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ArrowRightLeft, Wallet } from "lucide-react";
-import { getGroup } from "@/lib/groups.functions";
-import { listMembers } from "@/lib/members.functions";
-import { getBalances } from "@/lib/balances.functions";
+import { getGroup } from "@/lib/data/groups";
+import { listMembers } from "@/lib/data/members";
+import { getBalances } from "@/lib/data/balances";
 
 export const Route = createFileRoute("/groups/$groupId/settle")({
   ssr: false,
@@ -21,9 +20,9 @@ export const Route = createFileRoute("/groups/$groupId/settle")({
 
 function SettlePage() {
   const { groupId } = Route.useParams();
-  const fetchGroup = useServerFn(getGroup);
-  const fetchMembers = useServerFn(listMembers);
-  const fetchBalances = useServerFn(getBalances);
+  const fetchGroup = getGroup;
+  const fetchMembers = listMembers;
+  const fetchBalances = getBalances;
 
   const { data: group } = useQuery({
     queryKey: ["group", groupId],
