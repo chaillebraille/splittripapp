@@ -5,6 +5,7 @@ import { listGroups } from "@/lib/groups.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "SplitTrip — Your trips" },

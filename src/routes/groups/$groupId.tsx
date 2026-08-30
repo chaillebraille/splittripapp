@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/groups/$groupId")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Trip dashboard — SplitTrip" },
