@@ -121,13 +121,15 @@ export const adminCreateUser = createServerFn({ method: "POST" })
         /already/i.test(error.message) ? "That username is taken" : error.message,
       );
     }
-
+    return { success: true };
+  });
 
 export const adminResetPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ userId: z.string().uuid(), password: z.string().min(8) }).parse(data),
+    z.object({ userId: z.string().uuid(), password: z.string().min(12) }).parse(data),
   )
+
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const admin = await loadAdmin();
