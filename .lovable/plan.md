@@ -11,7 +11,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
 
 ## Features (scaled-down)
 1. **Home dashboard**
-   - Balance hero card: "You are owed" / "You owe" / "All even".
+   - Balance hero card for the selected trip: "You are owed" / "You owe" / "All even"; selecting a trip is the entry point to its dashboard.
    - Quick-add expense input.
    - Recent expenses feed.
    - Per-person balances list.
