@@ -90,10 +90,15 @@ const DB_NAME = "splittrip";
 const DB_VERSION = 1;
 const STORE = "kv";
 const KEY = "state";
+const CHANNEL_NAME = "splittrip-local-state";
 
 let state: LocalState = emptyState();
 let readyPromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();
+const stateChannel =
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
+    ? new BroadcastChannel(CHANNEL_NAME)
+    : null;
 
 function canUseIdb() {
   return typeof indexedDB !== "undefined";
@@ -127,6 +132,29 @@ async function readPersisted(): Promise<LocalState | null> {
 }
 
 let writeQueue: Promise<void> = Promise.resolve();
+let refreshPromise: Promise<void> | null = null;
+
+function refreshFromPersistence(): Promise<void> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      await writeQueue;
+      const persisted = await readPersisted();
+      if (persisted) {
+        state = { ...emptyState(), ...persisted };
+        notify();
+      }
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+if (stateChannel) {
+  stateChannel.onmessage = () => {
+    void refreshFromPersistence();
+  };
+}
 
 function persist() {
   if (!canUseIdb()) return;
@@ -140,6 +168,7 @@ function persist() {
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
+      stateChannel?.postMessage("changed");
     } catch (error) {
       console.error("Failed to persist local data", error);
     }
