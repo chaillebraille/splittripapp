@@ -31,6 +31,7 @@ const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN
 function NewExpensePage() {
   const { groupId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const fetchGroup = useServerFn(getGroup);
   const fetchMembers = useServerFn(listMembers);
   const fetchRate = useServerFn(getExchangeRate);
