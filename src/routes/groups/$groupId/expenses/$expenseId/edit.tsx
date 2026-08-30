@@ -108,35 +108,67 @@ function EditExpensePage() {
 
   const numericAmount = Number(amount) || 0;
   const numericRate = Number(exchangeRate) || 1;
-  const settleAmount = numericAmount / numericRate;
+  const settleAmount = numericAmount * numericRate;
+  const settleCurrency = group?.settle_currency ?? "EUR";
+
+  const selectedMembers = useMemo(
+    () => members.filter((m) => selectedMemberIds.has(m.id)),
+    [members, selectedMemberIds]
+  );
+  const equalShare = selectedMembers.length > 0 ? settleAmount / selectedMembers.length : 0;
 
   const splits = useMemo(() => {
-    const selected = members.filter((m) => selectedMemberIds.has(m.id));
-    if (selected.length === 0) return [];
+    if (selectedMembers.length === 0) return [];
 
     if (splitMode === "equal") {
-      const each = settleAmount / selected.length;
-      return selected.map((m) => ({ member_id: m.id, amount: Number(each.toFixed(4)) }));
+      const each = Number(equalShare.toFixed(2));
+      return selectedMembers.map((m, i) =>
+        i === selectedMembers.length - 1
+          ? {
+              member_id: m.id,
+              amount: Number((settleAmount - each * (selectedMembers.length - 1)).toFixed(2)),
+            }
+          : { member_id: m.id, amount: each }
+      );
     }
 
-    const result: { member_id: string; amount: number }[] = [];
-    for (let i = 0; i < selected.length; i++) {
-      const m = selected[i]!;
-      if (i === selected.length - 1) {
-        const assigned = result.reduce((s, r) => s + r.amount, 0);
-        result.push({ member_id: m.id, amount: Number((settleAmount - assigned).toFixed(4)) });
-      } else {
-        result.push({ member_id: m.id, amount: Number(customAmounts[m.id] ?? 0) });
-      }
-    }
-    return result;
-  }, [members, selectedMemberIds, splitMode, customAmounts, settleAmount]);
+    return selectedMembers.map((m) => ({
+      member_id: m.id,
+      amount: Number((Number(customAmounts[m.id] ?? "0") || 0).toFixed(2)),
+    }));
+  }, [selectedMembers, splitMode, customAmounts, settleAmount, equalShare]);
+
+  const splitTotal = splits.reduce((sum, s) => sum + s.amount, 0);
+  const splitDifference = Number((settleAmount - splitTotal).toFixed(2));
+  const splitsBalanced = Math.abs(splitDifference) < 0.005;
+
+  function useEqualSplit() {
+    setSplitMode("equal");
+  }
+
+  function useCustomSplit() {
+    const each = equalShare.toFixed(2);
+    setCustomAmounts((prev) => {
+      const next = { ...prev };
+      for (const m of selectedMembers) next[m.id] = each;
+      return next;
+    });
+    setSplitMode("custom");
+  }
 
   function toggleMember(id: string) {
     setSelectedMemberIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else next.add(id);
+      else {
+        next.add(id);
+        if (splitMode === "custom") {
+          setCustomAmounts((amounts) => ({
+            ...amounts,
+            [id]: amounts[id] ?? equalShare.toFixed(2),
+          }));
+        }
+      }
       return next;
     });
   }
@@ -145,6 +177,10 @@ function EditExpensePage() {
     e.preventDefault();
     if (!description.trim() || numericAmount <= 0 || !payerId || splits.length === 0 || isSubmitting) {
       toast.error("Please fill in all fields and select at least one member.");
+      return;
+    }
+    if (!splitsBalanced) {
+      toast.error("The split must add up to the full expense amount.");
       return;
     }
 
@@ -251,8 +287,8 @@ function EditExpensePage() {
               className="rounded-xl"
             />
             <p className="text-xs text-muted-foreground">
-              1 {currency} = {exchangeRate} {group?.settle_currency ?? "EUR"} · settles to{" "}
-              {settleAmount.toFixed(2)} {group?.settle_currency ?? "EUR"}
+              1 {currency} = {exchangeRate} {settleCurrency} · settles to{" "}
+              {settleAmount.toFixed(2)} {settleCurrency}
             </p>
           </div>
 
@@ -289,7 +325,7 @@ function EditExpensePage() {
               <div className="flex rounded-lg bg-secondary p-1">
                 <button
                   type="button"
-                  onClick={() => setSplitMode("equal")}
+                  onClick={useEqualSplit}
                   className={`rounded-md px-3 py-1 text-xs font-semibold ${
                     splitMode === "equal" ? "bg-background text-foreground shadow" : "text-muted-foreground"
                   }`}
@@ -298,7 +334,7 @@ function EditExpensePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSplitMode("custom")}
+                  onClick={useCustomSplit}
                   className={`rounded-md px-3 py-1 text-xs font-semibold ${
                     splitMode === "custom" ? "bg-background text-foreground shadow" : "text-muted-foreground"
                   }`}
@@ -333,20 +369,26 @@ function EditExpensePage() {
                       <span className="font-medium text-foreground">{m.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {splitMode === "custom" && selected && (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={customAmounts[m.id] ?? ""}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) =>
-                            setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
-                          }
-                          placeholder="0.00"
-                          className="h-8 w-24 rounded-lg text-right"
-                        />
-                      )}
+                      {selected &&
+                        (splitMode === "custom" ? (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={customAmounts[m.id] ?? equalShare.toFixed(2)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
+                            }
+                            placeholder="0.00"
+                            className="h-8 w-24 rounded-lg text-right"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-foreground">
+                            {(splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2)}{" "}
+                            {settleCurrency}
+                          </span>
+                        ))}
                       {selected ? (
                         <Check className="h-5 w-5 text-primary" />
                       ) : (
@@ -358,13 +400,27 @@ function EditExpensePage() {
               })}
             </div>
 
-            {splitMode === "equal" && (
-              <p className="text-sm text-muted-foreground">
-                Each selected member owes{" "}
-                {splits.length > 0 ? (settleAmount / splits.length).toFixed(2) : "0.00"}{" "}
-                {group?.settle_currency ?? "EUR"}
-              </p>
-            )}
+            <div className="rounded-xl bg-card p-3 text-sm shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Split total</span>
+                <span className="font-semibold text-card-foreground">
+                  {splitTotal.toFixed(2)} {settleCurrency}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-muted-foreground">Expense total</span>
+                <span className="font-semibold text-card-foreground">
+                  {settleAmount.toFixed(2)} {settleCurrency}
+                </span>
+              </div>
+              {!splitsBalanced && (
+                <p className="mt-2 font-semibold text-destructive">
+                  {splitDifference > 0
+                    ? `${splitDifference.toFixed(2)} ${settleCurrency} left to assign`
+                    : `${Math.abs(splitDifference).toFixed(2)} ${settleCurrency} over the expense`}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -372,7 +428,7 @@ function EditExpensePage() {
           <div className="mx-auto max-w-md">
             <Button
               type="submit"
-              disabled={!description.trim() || numericAmount <= 0 || !payerId || splits.length === 0 || isSubmitting}
+              disabled={!description.trim() || numericAmount <= 0 || !payerId || splits.length === 0 || !splitsBalanced || isSubmitting}
               className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
             >
               Update expense
