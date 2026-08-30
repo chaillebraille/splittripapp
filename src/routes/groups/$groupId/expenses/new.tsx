@@ -147,6 +147,8 @@ function NewExpensePage() {
           splits,
         },
       });
+      await queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
+      await queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
       toast.success("Expense added");
       navigate({ to: "/groups/$groupId", params: { groupId } });
     } catch (err) {
