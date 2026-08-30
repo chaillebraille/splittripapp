@@ -99,7 +99,7 @@ function NewExpensePage() {
     () => members.filter((m) => selectedMemberIds.has(m.id)),
     [members, selectedMemberIds]
   );
-  const equalShare = selectedMembers.length > 0 ? settleAmount / selectedMembers.length : 0;
+  const equalShare = selectedMembers.length > 0 ? numericAmount / selectedMembers.length : 0;
 
   const splits = useMemo(() => {
     if (selectedMembers.length === 0) return [];
@@ -110,7 +110,7 @@ function NewExpensePage() {
         i === selectedMembers.length - 1
           ? {
               member_id: m.id,
-              amount: Number((settleAmount - each * (selectedMembers.length - 1)).toFixed(2)),
+              amount: Number((numericAmount - each * (selectedMembers.length - 1)).toFixed(2)),
             }
           : { member_id: m.id, amount: each }
       );
@@ -120,11 +120,28 @@ function NewExpensePage() {
       member_id: m.id,
       amount: Number((Number(customAmounts[m.id] ?? "0") || 0).toFixed(2)),
     }));
-  }, [selectedMembers, splitMode, customAmounts, settleAmount, equalShare]);
+  }, [selectedMembers, splitMode, customAmounts, numericAmount, equalShare]);
 
   const splitTotal = splits.reduce((sum, s) => sum + s.amount, 0);
-  const splitDifference = Number((settleAmount - splitTotal).toFixed(2));
+  const splitDifference = Number((numericAmount - splitTotal).toFixed(2));
   const splitsBalanced = Math.abs(splitDifference) < 0.005;
+
+  // Splits are entered in the expense currency; store them in the trip settle currency.
+  const settleSplits = splits.map((s, i) =>
+    i === splits.length - 1
+      ? {
+          member_id: s.member_id,
+          amount: Number(
+            (
+              settleAmount -
+              splits
+                .slice(0, -1)
+                .reduce((sum, other) => sum + Number((other.amount * numericRate).toFixed(2)), 0)
+            ).toFixed(2)
+          ),
+        }
+      : { member_id: s.member_id, amount: Number((s.amount * numericRate).toFixed(2)) }
+  );
 
   function useEqualSplit() {
     setSplitMode("equal");
@@ -179,7 +196,7 @@ function NewExpensePage() {
           description: description.trim(),
           expense_date: date,
           payer_id: payerId,
-          splits,
+          splits: settleSplits,
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
@@ -362,7 +379,7 @@ function NewExpensePage() {
                         ) : (
                           <span className="text-sm font-semibold text-foreground">
                             {(splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2)}{" "}
-                            {settleCurrency}
+                            {currency}
                           </span>
                         ))}
                       {selected ? (
@@ -380,20 +397,20 @@ function NewExpensePage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Split total</span>
                 <span className="font-semibold text-card-foreground">
-                  {splitTotal.toFixed(2)} {settleCurrency}
+                  {splitTotal.toFixed(2)} {currency}
                 </span>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-muted-foreground">Expense total</span>
                 <span className="font-semibold text-card-foreground">
-                  {settleAmount.toFixed(2)} {settleCurrency}
+                  {numericAmount.toFixed(2)} {currency}
                 </span>
               </div>
               {!splitsBalanced && (
                 <p className="mt-2 font-semibold text-destructive">
                   {splitDifference > 0
-                    ? `${splitDifference.toFixed(2)} ${settleCurrency} left to assign`
-                    : `${Math.abs(splitDifference).toFixed(2)} ${settleCurrency} over the expense`}
+                    ? `${splitDifference.toFixed(2)} ${currency} left to assign`
+                    : `${Math.abs(splitDifference).toFixed(2)} ${currency} over the expense`}
                 </p>
               )}
             </div>
