@@ -68,7 +68,7 @@ export type Database = {
           group_id: string
           id: string
           payer_id: string | null
-          settle_amount: number
+          settle_amount: number | null
           updated_at: string
         }
         Insert: {
@@ -82,7 +82,7 @@ export type Database = {
           group_id: string
           id?: string
           payer_id?: string | null
-          settle_amount?: number
+          settle_amount?: number | null
           updated_at?: string
         }
         Update: {
@@ -96,7 +96,7 @@ export type Database = {
           group_id?: string
           id?: string
           payer_id?: string | null
-          settle_amount?: number
+          settle_amount?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -121,6 +121,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          image_url: string | null
           name: string
           settle_currency: string
           updated_at: string
@@ -129,6 +130,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          image_url?: string | null
           name: string
           settle_currency?: string
           updated_at?: string
@@ -137,6 +139,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          image_url?: string | null
           name?: string
           settle_currency?: string
           updated_at?: string
