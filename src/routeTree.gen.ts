@@ -14,6 +14,7 @@ import { Route as GroupsGroupIdRouteImport } from './routes/groups/$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups/new'
 import { Route as GroupsGroupIdSettleRouteImport } from './routes/groups/$groupId/settle'
 import { Route as GroupsGroupIdExpensesNewRouteImport } from './routes/groups/$groupId/expenses/new'
+import { Route as GroupsGroupIdExpensesExpenseIdEditRouteImport } from './routes/groups/$groupId/expenses/$expenseId/edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +42,12 @@ const GroupsGroupIdExpensesNewRoute =
     path: '/expenses/new',
     getParentRoute: () => GroupsGroupIdRoute,
   } as any)
+const GroupsGroupIdExpensesExpenseIdEditRoute =
+  GroupsGroupIdExpensesExpenseIdEditRouteImport.update({
+    id: '/expenses/$expenseId/edit',
+    path: '/expenses/$expenseId/edit',
+    getParentRoute: () => GroupsGroupIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -48,6 +55,7 @@ export interface FileRoutesByFullPath {
   '/groups/new': typeof GroupsNewRoute
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
   '/groups/new': typeof GroupsNewRoute
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -63,6 +72,7 @@ export interface FileRoutesById {
   '/groups/new': typeof GroupsNewRoute
   '/groups/$groupId/settle': typeof GroupsGroupIdSettleRoute
   '/groups/$groupId/expenses/new': typeof GroupsGroupIdExpensesNewRoute
+  '/groups/$groupId/expenses/$expenseId/edit': typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/groups/$groupId/settle'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/expenses/$expenseId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -79,6 +90,7 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/groups/$groupId/settle'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/expenses/$expenseId/edit'
   id:
     | '__root__'
     | '/'
@@ -86,6 +98,7 @@ export interface FileRouteTypes {
     | '/groups/new'
     | '/groups/$groupId/settle'
     | '/groups/$groupId/expenses/new'
+    | '/groups/$groupId/expenses/$expenseId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,17 +144,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GroupsGroupIdExpensesNewRouteImport
       parentRoute: typeof GroupsGroupIdRoute
     }
+    '/groups/$groupId/expenses/$expenseId/edit': {
+      id: '/groups/$groupId/expenses/$expenseId/edit'
+      path: '/expenses/$expenseId/edit'
+      fullPath: '/groups/$groupId/expenses/$expenseId/edit'
+      preLoaderRoute: typeof GroupsGroupIdExpensesExpenseIdEditRouteImport
+      parentRoute: typeof GroupsGroupIdRoute
+    }
   }
 }
 
 interface GroupsGroupIdRouteChildren {
   GroupsGroupIdSettleRoute: typeof GroupsGroupIdSettleRoute
   GroupsGroupIdExpensesNewRoute: typeof GroupsGroupIdExpensesNewRoute
+  GroupsGroupIdExpensesExpenseIdEditRoute: typeof GroupsGroupIdExpensesExpenseIdEditRoute
 }
 
 const GroupsGroupIdRouteChildren: GroupsGroupIdRouteChildren = {
   GroupsGroupIdSettleRoute: GroupsGroupIdSettleRoute,
   GroupsGroupIdExpensesNewRoute: GroupsGroupIdExpensesNewRoute,
+  GroupsGroupIdExpensesExpenseIdEditRoute:
+    GroupsGroupIdExpensesExpenseIdEditRoute,
 }
 
 const GroupsGroupIdRouteWithChildren = GroupsGroupIdRoute._addFileChildren(
