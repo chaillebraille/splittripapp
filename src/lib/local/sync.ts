@@ -24,6 +24,9 @@ let syncing = false;
 let error: string | null = null;
 let queued = false;
 let enabled = false;
+const MAX_OP_ATTEMPTS = 3;
+const failureCounts = new Map<string, number>();
+
 const statusListeners = new Set<() => void>();
 
 function notifyStatus() {
