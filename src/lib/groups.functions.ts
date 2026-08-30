@@ -31,6 +31,7 @@ export const getGroup = createServerFn({ method: "GET" })
 const createGroupSchema = z.object({
   name: z.string().min(1).max(100),
   settle_currency: z.string().min(1).max(3),
+  image_url: z.string().max(400000).nullable().optional(),
 });
 
 export const createGroup = createServerFn({ method: "POST" })
