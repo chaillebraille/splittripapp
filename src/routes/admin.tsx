@@ -36,7 +36,7 @@ function generatePassword(): string {
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isReady, isAdmin } = useAuth();
+  const { isReady, isAdmin, userId } = useAuth();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -82,9 +82,15 @@ function AdminPage() {
     }
   }
 
-  async function handleToggleDisabled(userId: string, disabled: boolean) {
+  async function handleToggleDisabled(targetId: string, disabled: boolean) {
     try {
-      await adminSetUserDisabled({ data: { userId, disabled: !disabled } });
+      const result = await adminSetUserDisabled({
+        data: { userId: targetId, disabled: !disabled },
+      });
+      if (!result.success) {
+        toast.error(result.error ?? "Could not update the account");
+        return;
+      }
       toast.success(!disabled ? "Account disabled" : "Account re-enabled");
       await refresh();
     } catch (err) {
