@@ -34,6 +34,7 @@ function NewExpensePage() {
   const queryClient = useQueryClient();
   const fetchGroup = useServerFn(getGroup);
   const fetchMembers = useServerFn(listMembers);
+  const fetchExpenses = useServerFn(listExpenses);
   const fetchRate = useServerFn(getExchangeRate);
   const create = useServerFn(createExpense);
 
