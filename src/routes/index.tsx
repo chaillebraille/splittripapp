@@ -28,7 +28,6 @@ function HomePage() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
       <header className="px-6 pt-8 pb-4">
         <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
-        <p className="mt-1 text-muted-foreground">Share travel expenses fairly.</p>
       </header>
 
       <main className="flex-1 px-6 pb-24">
@@ -60,12 +59,19 @@ function HomePage() {
                 params={{ groupId: group.id }}
                 className="flex items-center gap-4 rounded-2xl bg-card p-4 shadow-sm transition-transform active:scale-[0.98]"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary text-lg font-bold text-secondary-foreground">
-                  {group.name.slice(0, 1).toUpperCase()}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-lg font-bold text-secondary-foreground">
+                  {group.image_url ? (
+                    <img
+                      src={group.image_url}
+                      alt={`${group.name} photo`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    group.name.slice(0, 1).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-semibold text-card-foreground">{group.name}</h3>
-                  <p className="text-sm text-muted-foreground">Settle in {group.settle_currency}</p>
                 </div>
                 <Users className="h-5 w-5 text-muted-foreground" />
               </Link>

@@ -1,0 +1,273 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Plus, X } from "lucide-react";
+import { getGroup, updateGroup } from "@/lib/groups.functions";
+import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/members.functions";
+import { TripImagePicker } from "@/components/TripImagePicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/groups/$groupId/profile")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Trip profile — SplitTrip" },
+      { name: "description", content: "Edit this trip's photo, name, settle currency, and members." },
+      { property: "og:title", content: "Trip profile — SplitTrip" },
+      { property: "og:description", content: "Edit this trip's photo, name, settle currency, and members." },
+    ],
+  }),
+  component: TripProfilePage,
+});
+
+const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN"];
+
+function initialFromName(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length > 1) {
+    return ((parts[0] ?? "").charAt(0) + (parts[1] ?? "").charAt(0)).toUpperCase();
+  }
+  return trimmed.slice(0, 1).toUpperCase();
+}
+
+function TripProfilePage() {
+  const { groupId } = Route.useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fetchGroup = useServerFn(getGroup);
+  const fetchMembers = useServerFn(listMembers);
+  const fetchSuggestions = useServerFn(suggestMembers);
+  const update = useServerFn(updateGroup);
+  const addMemberFn = useServerFn(createMember);
+  const removeMemberFn = useServerFn(deleteMember);
+
+  const { data: group } = useQuery({
+    queryKey: ["group", groupId],
+    queryFn: () => fetchGroup({ data: { id: groupId } }),
+  });
+  const { data: members = [] } = useQuery({
+    queryKey: ["members", groupId],
+    queryFn: () => fetchMembers({ data: { group_id: groupId } }),
+  });
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["member-suggestions"],
+    queryFn: fetchSuggestions,
+  });
+
+  const [name, setName] = useState("");
+  const [currency, setCurrency] = useState("EUR");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!group) return;
+    setName(group.name);
+    setCurrency(group.settle_currency);
+    setImageUrl(group.image_url ?? null);
+  }, [group]);
+
+  async function refreshMembers() {
+    await queryClient.invalidateQueries({ queryKey: ["members", groupId] });
+    await queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+  }
+
+  async function handleAddMember(memberName: string, initial?: string) {
+    const trimmed = memberName.trim();
+    if (!trimmed) return;
+    if (members.some((m) => m.name.toLowerCase() === trimmed.toLowerCase())) return;
+    try {
+      await addMemberFn({
+        data: {
+          group_id: groupId,
+          name: trimmed,
+          initial: initial?.toUpperCase() || initialFromName(trimmed),
+        },
+      });
+      setNewMemberName("");
+      await refreshMembers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add member");
+    }
+  }
+
+  async function handleRemoveMember(id: string) {
+    try {
+      await removeMemberFn({ data: { id } });
+      await refreshMembers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove member");
+    }
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      await update({
+        data: {
+          id: groupId,
+          name: name.trim(),
+          settle_currency: currency,
+          image_url: imageUrl,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["group", groupId] });
+      await queryClient.invalidateQueries({ queryKey: ["groups"] });
+      await queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+      toast.success("Trip updated");
+      navigate({ to: "/groups/$groupId", params: { groupId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save the trip");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
+      <header className="flex items-center gap-3 px-6 pt-8 pb-4">
+        <button
+          onClick={() => navigate({ to: "/groups/$groupId", params: { groupId } })}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="font-display text-3xl font-bold text-foreground">Trip profile</h1>
+      </header>
+
+      <form onSubmit={handleSave} className="flex-1 px-6 pb-28">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label>Trip photo</Label>
+            <TripImagePicker
+              value={imageUrl}
+              onChange={setImageUrl}
+              fallback={name.trim().slice(0, 1).toUpperCase()}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Trip name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Settle currency</Label>
+            <select
+              id="currency"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              {COMMON_CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Members</Label>
+            {members.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                      {member.initial || member.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    {member.name}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMember(member.id)}
+                      aria-label={`Remove ${member.name}`}
+                      className="ml-1 rounded-full p-0.5 hover:bg-secondary-foreground/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleAddMember(newMemberName);
+                  }
+                }}
+                placeholder="Add a member"
+                className="rounded-xl"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void handleAddMember(newMemberName)}
+                aria-label="Add member"
+                className="shrink-0 rounded-xl"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {suggestions.filter(
+              (s) => !members.some((m) => m.name.toLowerCase() === s.name.toLowerCase())
+            ).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Suggested from previous trips</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions
+                    .filter(
+                      (s) => !members.some((m) => m.name.toLowerCase() === s.name.toLowerCase())
+                    )
+                    .map((s) => (
+                      <button
+                        key={s.name}
+                        type="button"
+                        onClick={() => void handleAddMember(s.name, s.initial)}
+                        className="rounded-full border border-input bg-card px-3 py-1.5 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
+                      >
+                        + {s.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 p-4 backdrop-blur-sm">
+          <div className="mx-auto max-w-md">
+            <Button
+              type="submit"
+              disabled={!name.trim() || isSaving}
+              className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
+            >
+              Save trip
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
