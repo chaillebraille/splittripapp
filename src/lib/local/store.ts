@@ -96,7 +96,9 @@ let state: LocalState = emptyState();
 let readyPromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 const stateChannel =
-  typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(CHANNEL_NAME) : null;
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
+    ? new BroadcastChannel(CHANNEL_NAME)
+    : null;
 
 function canUseIdb() {
   return typeof indexedDB !== "undefined";
