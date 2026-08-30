@@ -1,12 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { USERNAME_PATTERN, normalizeUsername, usernameToEmail } from "@/lib/username";
+import { parseUsername, usernameToEmail } from "@/lib/username";
 
-const usernameSchema = z
-  .string()
-  .transform((v) => normalizeUsername(v))
-  .refine((v) => USERNAME_PATTERN.test(v), "Invalid username");
 
 
 type AdminContext = { supabase: any; userId: string };
