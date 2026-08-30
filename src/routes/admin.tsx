@@ -68,8 +68,9 @@ function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
   const sortedUsers = [...users].sort((a, b) =>
-    a.username.localeCompare(b.username, undefined, { sensitivity: "base" }),
+    (a?.username ?? "").localeCompare(b?.username ?? "", undefined, { sensitivity: "base" }),
   );
+
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
