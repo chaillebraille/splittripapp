@@ -30,10 +30,45 @@ type Props = {
   settleCurrency: string | undefined;
   deletingExpenseId: string | null;
   onDelete: (id: string) => void;
+  /** When false, rows are read-only: no edit navigation and no delete button. */
+  canEdit?: boolean;
   emptyLabel?: string;
   /** When provided, the secondary line shows "Your share: <amount>" instead of the converted total. */
   shareAmounts?: Record<string, number>;
 };
+
+function ExpenseRow({
+  expense,
+  payer,
+  settleCurrency,
+  shareAmounts,
+}: {
+  expense: ExpenseListItem;
+  payer: { id: string; name: string } | undefined;
+  settleCurrency: string | undefined;
+  shareAmounts: Record<string, number> | undefined;
+}) {
+  return (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-card-foreground">{expense.description}</p>
+        <p className="text-xs text-muted-foreground">
+          Paid by {payer?.name ?? "Unknown"} · {format(new Date(expense.expense_date), "MMM d")}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="font-semibold text-card-foreground">
+          {expense.amount} {expense.currency}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {shareAmounts
+            ? `Your share: ${Number(shareAmounts[expense.id] ?? 0).toFixed(2)} ${settleCurrency ?? ""}`
+            : `≈ ${Number(expense.settle_amount ?? 0).toFixed(2)} ${settleCurrency ?? ""}`}
+        </p>
+      </div>
+    </>
+  );
+}
 
 export function ExpenseList({
   expenses,
@@ -42,6 +77,7 @@ export function ExpenseList({
   settleCurrency,
   deletingExpenseId,
   onDelete,
+  canEdit = true,
   emptyLabel = "No expenses yet.",
   shareAmounts,
 }: Props) {
@@ -66,38 +102,30 @@ export function ExpenseList({
               key={expense.id}
               className="flex items-center gap-2 rounded-2xl bg-card p-4 shadow-sm"
             >
-              <Link
-                to="/groups/$groupId/expenses/$expenseId/edit"
-                params={{ groupId, expenseId: expense.id }}
-                className="flex min-w-0 flex-1 items-center justify-between gap-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-card-foreground">{expense.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Paid by {payer?.name ?? "Unknown"} ·{" "}
-                    {format(new Date(expense.expense_date), "MMM d")}
-                  </p>
+              {canEdit ? (
+                <Link
+                  to="/groups/$groupId/expenses/$expenseId/edit"
+                  params={{ groupId, expenseId: expense.id }}
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3"
+                >
+                  <ExpenseRow expense={expense} payer={payer} settleCurrency={settleCurrency} shareAmounts={shareAmounts} />
+                </Link>
+              ) : (
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                  <ExpenseRow expense={expense} payer={payer} settleCurrency={settleCurrency} shareAmounts={shareAmounts} />
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-card-foreground">
-                    {expense.amount} {expense.currency}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {shareAmounts
-                      ? `Your share: ${Number(shareAmounts[expense.id] ?? 0).toFixed(2)} ${settleCurrency ?? ""}`
-                      : `≈ ${Number(expense.settle_amount ?? 0).toFixed(2)} ${settleCurrency ?? ""}`}
-                  </p>
-                </div>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setPendingDelete(expense)}
-                disabled={deletingExpenseId === expense.id}
-                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                aria-label="Delete expense"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(expense)}
+                  disabled={deletingExpenseId === expense.id}
+                  className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label="Delete expense"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           );
         })}

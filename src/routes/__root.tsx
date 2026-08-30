@@ -4,6 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useNavigate,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,7 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AuthProvider } from "../lib/auth-provider";
+import { AuthProvider, useAuth } from "../lib/auth-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SyncIndicator } from "@/components/SyncIndicator";
 import { registerAppServiceWorker } from "@/lib/pwa";
@@ -127,6 +129,36 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function SplashScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <p className="font-display text-3xl font-bold text-foreground">SplitTrip</p>
+    </div>
+  );
+}
+
+/** Signs every page except /auth in; unauthenticated users are sent to /auth. */
+function AuthGate({ children }: { children: ReactNode }) {
+  const { isReady, userId } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/auth";
+
+  useEffect(() => {
+    if (isReady && !userId && !isAuthPage) {
+      void navigate({
+        to: "/auth",
+        search: { redirect: location.href },
+        replace: true,
+      });
+    }
+  }, [isReady, userId, isAuthPage, navigate, location.href]);
+
+  if (!isReady) return <SplashScreen />;
+  if (!userId && !isAuthPage) return <SplashScreen />;
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -137,10 +169,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SyncIndicator />
-        <Outlet />
+        <AuthGate>
+          <SignedInChrome />
+          <Outlet />
+        </AuthGate>
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function SignedInChrome() {
+  const { userId } = useAuth();
+  if (!userId) return null;
+  return <SyncIndicator />;
 }

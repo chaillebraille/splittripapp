@@ -7,12 +7,18 @@
  * instant and work with no network at all.
  */
 
+export type TripRole = "owner" | "editor" | "viewer";
+
 export type LocalGroup = {
   id: string;
   name: string;
   settle_currency: string;
   image_url: string | null;
   created_at: string;
+  /** Owner's user id (may be missing on legacy local data). */
+  created_by?: string | null;
+  /** The signed-in user's role for this trip; undefined is treated as owner. */
+  my_role?: TripRole;
 };
 
 export type LocalMember = {
@@ -89,7 +95,8 @@ function emptyState(): LocalState {
 const DB_NAME = "splittrip";
 const DB_VERSION = 1;
 const STORE = "kv";
-const KEY = "state";
+/** Per-user storage key so two accounts on one device never see each other's data. */
+let storageKey = "state:signed-out";
 const CHANNEL_NAME = "splittrip-local-state";
 
 let state: LocalState = emptyState();
@@ -122,7 +129,7 @@ async function readPersisted(): Promise<LocalState | null> {
     const db = await openDb();
     return await new Promise<LocalState | null>((resolve, reject) => {
       const tx = db.transaction(STORE, "readonly");
-      const req = tx.objectStore(STORE).get(KEY);
+      const req = tx.objectStore(STORE).get(storageKey);
       req.onsuccess = () => resolve((req.result as LocalState | undefined) ?? null);
       req.onerror = () => reject(req.error);
     });
@@ -164,7 +171,7 @@ function persist() {
       const db = await openDb();
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE, "readwrite");
-        tx.objectStore(STORE).put(snapshot, KEY);
+        tx.objectStore(STORE).put(snapshot, storageKey);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
@@ -183,6 +190,26 @@ export function ready(): Promise<void> {
     })();
   }
   return readyPromise;
+}
+
+/**
+ * Switches the local dataset to another signed-in user (or signed-out).
+ * Each account gets its own IndexedDB record so data never leaks across users
+ * on a shared device.
+ */
+export async function switchUser(userId: string | null): Promise<void> {
+  const nextKey = `state:${userId ?? "signed-out"}`;
+  if (nextKey === storageKey) {
+    await ready();
+    return;
+  }
+  await writeQueue;
+  storageKey = nextKey;
+  state = emptyState();
+  readyPromise = null;
+  notify();
+  await ready();
+  notify();
 }
 
 export function getState(): LocalState {

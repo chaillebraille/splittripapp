@@ -53,6 +53,8 @@ function GroupDashboardPage() {
   });
 
   const currentGroup = group ?? groups.find((g) => g.id === groupId);
+  const myRole = currentGroup?.my_role ?? "owner";
+  const canWrite = myRole !== "viewer";
 
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
@@ -143,14 +145,16 @@ function GroupDashboardPage() {
         <section className="mt-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Recent expenses</h2>
-            <Link
-              to="/groups/$groupId/expenses/new"
-              params={{ groupId }}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
-            >
-              <Plus className="h-4 w-4" />
-              Add
-            </Link>
+            {canWrite && (
+              <Link
+                to="/groups/$groupId/expenses/new"
+                params={{ groupId }}
+                className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
+              >
+                <Plus className="h-4 w-4" />
+                Add
+              </Link>
+            )}
           </div>
 
           <ExpenseList
@@ -160,6 +164,7 @@ function GroupDashboardPage() {
             settleCurrency={currentGroup?.settle_currency}
             deletingExpenseId={deletingExpenseId}
             onDelete={handleDeleteExpense}
+            canEdit={canWrite}
           />
         </section>
       </main>
