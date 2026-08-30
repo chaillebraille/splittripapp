@@ -32,7 +32,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
 
 ## Technical Plan
 - **Backend**: Lovable Cloud (PostgreSQL) with RLS policies.
-- **Tables**: `groups`, `members`, `expenses`, `expense_splits`. No `settlements` table — a payment between participants is recorded as a transfer expense (payer pays, receiver is the only split), so balances always derive from expenses and splits.
+- **Tables**: `groups`, `members`, `expenses`, `expense_splits`. No `settlements` table — the app only records expenses and splits and suggests minimal payments; actual payments happen outside the app.
 - **Server functions**: `createServerFn` for CRUD and balance calculations.
 - **Frontend**: TanStack Router, React, Tailwind CSS v4, shadcn/ui primitives.
 - **Routes**:
