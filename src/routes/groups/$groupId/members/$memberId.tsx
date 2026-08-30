@@ -141,6 +141,21 @@ function MemberPage() {
           />
         </section>
 
+        <section className="mt-6">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">Expenses shared in</h2>
+          <ExpenseList
+            expenses={sharedExpenses}
+            members={members}
+            groupId={groupId}
+            settleCurrency={settleCurrency}
+            deletingExpenseId={deletingExpenseId}
+            onDelete={handleDeleteExpense}
+            shareAmounts={shareAmounts}
+            emptyLabel="This member isn't part of any expense split."
+          />
+        </section>
+
+
         <Link
           to="/groups/$groupId/profile"
           params={{ groupId }}
