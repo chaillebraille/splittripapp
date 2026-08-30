@@ -108,6 +108,7 @@ export async function updateExpense({
 }: {
   data: {
     id: string;
+    group_id?: string;
     amount?: number;
     currency?: string;
     exchange_rate?: number;
