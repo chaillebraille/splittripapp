@@ -5,6 +5,7 @@ import { listGroups } from "@/lib/groups.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "SplitTrip — Your trips" },
@@ -35,7 +36,7 @@ function HomePage() {
           <div className="py-12 text-center text-muted-foreground">Loading trips…</div>
         ) : groups.length === 0 ? (
           <div className="mt-12 rounded-2xl bg-card p-6 text-center shadow-sm">
-            <div className="mx-flex mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
               <Wallet className="h-8 w-8 text-secondary-foreground" />
             </div>
             <h2 className="text-lg font-semibold text-card-foreground">No trips yet</h2>
