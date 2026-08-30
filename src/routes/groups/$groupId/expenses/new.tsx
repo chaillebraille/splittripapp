@@ -268,7 +268,10 @@ function NewExpensePage() {
               <select
                 id="currency"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(e) => {
+                  setCurrencyTouched(true);
+                  setCurrency(e.target.value);
+                }}
                 className="h-10 w-full rounded-xl border border-input bg-background px-3 text-foreground outline-none focus:ring-2 focus:ring-ring"
               >
                 {COMMON_CURRENCIES.map((c) => (
