@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Users, Wallet } from "lucide-react";
-import { listGroups } from "@/lib/groups.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { listGroups } from "@/lib/data/groups";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const fetchGroups = useServerFn(listGroups);
+  const fetchGroups = listGroups;
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups"],
     queryFn: fetchGroups,
