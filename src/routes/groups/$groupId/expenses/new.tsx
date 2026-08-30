@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { getGroup } from "@/lib/groups.functions";
 import { listMembers, suggestMembers } from "@/lib/members.functions";
-import { createExpense } from "@/lib/expenses.functions";
+import { createExpense, listExpenses } from "@/lib/expenses.functions";
 import { getExchangeRate } from "@/lib/exchange-rate.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ function NewExpensePage() {
   const queryClient = useQueryClient();
   const fetchGroup = useServerFn(getGroup);
   const fetchMembers = useServerFn(listMembers);
+  const fetchExpenses = useServerFn(listExpenses);
   const fetchRate = useServerFn(getExchangeRate);
   const create = useServerFn(createExpense);
 
@@ -56,12 +57,24 @@ function NewExpensePage() {
   const [splitMode, setSplitMode] = useState<"equal" | "custom">("equal");
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["expenses", groupId],
+    queryFn: () => fetchExpenses({ data: { group_id: groupId } }),
+  });
 
   useEffect(() => {
-    if (group?.settle_currency && !currency) {
+    if (currencyTouched) return;
+    // Default to the currency of the most recently entered expense;
+    // fall back to the trip settle currency when there are no expenses yet.
+    const latest = expenses[0]?.currency;
+    if (latest) {
+      setCurrency(latest);
+    } else if (group?.settle_currency) {
       setCurrency(group.settle_currency);
     }
-  }, [group?.settle_currency]);
+  }, [expenses, group?.settle_currency, currencyTouched]);
 
   useEffect(() => {
     if (members.length > 0 && !payerId) {
@@ -255,7 +268,10 @@ function NewExpensePage() {
               <select
                 id="currency"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(e) => {
+                  setCurrencyTouched(true);
+                  setCurrency(e.target.value);
+                }}
                 className="h-10 w-full rounded-xl border border-input bg-background px-3 text-foreground outline-none focus:ring-2 focus:ring-ring"
               >
                 {COMMON_CURRENCIES.map((c) => (
