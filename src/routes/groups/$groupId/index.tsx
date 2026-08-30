@@ -178,13 +178,19 @@ function GroupDashboardPage() {
             <Wallet className="h-6 w-6" />
             Trips
           </Link>
-          <Link
-            to="/groups/$groupId/expenses/new"
-            params={{ groupId }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
-          >
-            <Plus className="h-6 w-6" />
-          </Link>
+          {canWrite ? (
+            <Link
+              to="/groups/$groupId/expenses/new"
+              params={{ groupId }}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </Link>
+          ) : (
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+              View
+            </span>
+          )}
           <Link
             to="/groups/$groupId/settle"
             params={{ groupId }}

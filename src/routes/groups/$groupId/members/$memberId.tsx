@@ -54,6 +54,7 @@ function MemberPage() {
 
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
+  const canWrite = (group?.my_role ?? "owner") !== "viewer";
   const member = members.find((m) => m.id === memberId);
   const memberBalance = balances?.balances.find((b) => b.member_id === memberId);
   const settleCurrency = group?.settle_currency ?? "";
