@@ -130,14 +130,26 @@ function GroupDashboardPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="min-w-0 flex-1">
+        <Link
+          to="/groups/$groupId/profile"
+          params={{ groupId }}
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-base font-bold text-secondary-foreground">
+            {currentGroup?.image_url ? (
+              <img
+                src={currentGroup.image_url}
+                alt={`${currentGroup.name} photo`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              (currentGroup?.name ?? "T").slice(0, 1).toUpperCase()
+            )}
+          </span>
           <h1 className="truncate font-display text-3xl font-bold text-foreground">
             {currentGroup?.name ?? "Trip"}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Settle in {currentGroup?.settle_currency ?? "EUR"}
-          </p>
-        </div>
+        </Link>
       </header>
 
       <main className="flex-1 px-6 pb-28">
