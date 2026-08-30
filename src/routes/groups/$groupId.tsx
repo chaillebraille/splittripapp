@@ -1,15 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Plus, Receipt, Users, Wallet } from "lucide-react";
-import { getGroup, listGroups } from "@/lib/groups.functions";
-import { listMembers } from "@/lib/members.functions";
-import { listExpenses } from "@/lib/expenses.functions";
-import { getBalances } from "@/lib/balances.functions";
+import { ArrowLeft, MoreHorizontal, Plus, Receipt, Trash2, Users, Wallet, X } from "lucide-react";
+import { useState } from "react";
 import { format } from "date-fns";
+import { getGroup, listGroups } from "@/lib/groups.functions";
+import { createMember, deleteMember, listMembers } from "@/lib/members.functions";
+import { deleteExpense, listExpenses } from "@/lib/expenses.functions";
+import { getBalances } from "@/lib/balances.functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/groups/$groupId")({
-  head: ({ params }) => ({
+  head: () => ({
     meta: [
       { title: "Trip dashboard — SplitTrip" },
       { name: "description", content: "View balances, recent expenses, and members for this trip." },
@@ -20,13 +24,29 @@ export const Route = createFileRoute("/groups/$groupId")({
   component: GroupDashboardPage,
 });
 
+function initialFromName(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length > 1) {
+    const first = parts[0] ?? "";
+    const second = parts[1] ?? "";
+    return (first.charAt(0) + second.charAt(0)).toUpperCase();
+  }
+  return trimmed.slice(0, 1).toUpperCase();
+}
+
 function GroupDashboardPage() {
   const { groupId } = Route.useParams();
+  const queryClient = useQueryClient();
   const fetchGroup = useServerFn(getGroup);
+  const fetchGroups = useServerFn(listGroups);
   const fetchMembers = useServerFn(listMembers);
   const fetchExpenses = useServerFn(listExpenses);
   const fetchBalances = useServerFn(getBalances);
-  const fetchGroups = useServerFn(listGroups);
+  const createMemberFn = useServerFn(createMember);
+  const deleteMemberFn = useServerFn(deleteMember);
+  const deleteExpenseFn = useServerFn(deleteExpense);
 
   const { data: groups = [] } = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
   const { data: group } = useQuery({
@@ -48,10 +68,58 @@ function GroupDashboardPage() {
 
   const currentGroup = group ?? groups.find((g) => g.id === groupId);
 
+  const [newMemberName, setNewMemberName] = useState("");
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+
   const net = balances?.balances.reduce((sum, b) => sum + b.net, 0) ?? 0;
   const isSettled = Math.abs(net) < 0.01;
   const youOwe = (balances?.totalOwes ?? 0) > 0;
   const youAreOwed = (balances?.totalOwed ?? 0) > 0;
+
+  async function handleAddMember(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = newMemberName.trim();
+    if (!trimmed || isAddingMember) return;
+    setIsAddingMember(true);
+    try {
+      await createMemberFn({
+        data: { group_id: groupId, name: trimmed, initial: initialFromName(trimmed) },
+      });
+      queryClient.invalidateQueries({ queryKey: ["members", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+      setNewMemberName("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add member");
+    } finally {
+      setIsAddingMember(false);
+    }
+  }
+
+  async function handleDeleteMember(id: string) {
+    try {
+      await deleteMemberFn({ data: { id } });
+      queryClient.invalidateQueries({ queryKey: ["members", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove member");
+    }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    if (deletingExpenseId) return;
+    setDeletingExpenseId(id);
+    try {
+      await deleteExpenseFn({ data: { id } });
+      queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+      toast.success("Expense deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete expense");
+    } finally {
+      setDeletingExpenseId(null);
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
@@ -98,15 +166,40 @@ function GroupDashboardPage() {
             {members.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
+                className="group flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                   {member.initial || member.name.slice(0, 1).toUpperCase()}
                 </span>
                 {member.name}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMember(member.id)}
+                  className="ml-1 rounded-full p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label={`Remove ${member.name}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
           </div>
+
+          <form onSubmit={handleAddMember} className="mt-3 flex gap-2">
+            <Input
+              value={newMemberName}
+              onChange={(e) => setNewMemberName(e.target.value)}
+              placeholder="Add member"
+              className="rounded-xl"
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={!newMemberName.trim() || isAddingMember}
+              className="shrink-0 rounded-xl"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </form>
         </section>
 
         <section className="mt-6">
@@ -136,20 +229,41 @@ function GroupDashboardPage() {
                     key={expense.id}
                     className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-card-foreground">{expense.description}</p>
                       <p className="text-xs text-muted-foreground">
                         Paid by {payer?.name ?? "Unknown"} ·{" "}
                         {format(new Date(expense.expense_date), "MMM d")}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-card-foreground">
-                        {expense.amount} {expense.currency}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        ≈ {Number(expense.settle_amount).toFixed(2)} {currentGroup?.settle_currency}
-                      </p>
+                    <div className="flex items-center gap-3 text-right">
+                      <div>
+                        <p className="font-semibold text-card-foreground">
+                          {expense.amount} {expense.currency}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ≈ {Number(expense.settle_amount).toFixed(2)} {currentGroup?.settle_currency}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          to="/groups/$groupId/expenses/$expenseId/edit"
+                          params={{ groupId, expenseId: expense.id }}
+                          className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
+                          aria-label="Edit expense"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          disabled={deletingExpenseId === expense.id}
+                          className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Delete expense"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
