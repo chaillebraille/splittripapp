@@ -273,7 +273,10 @@ function AdminPage() {
               <div key={user.id} className="rounded-2xl bg-card p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-card-foreground">{user.username}</p>
+                    <p className="flex items-center gap-1.5 truncate font-medium text-card-foreground">
+                      <span className="truncate">{user.username}</span>
+                      {user.is_admin && <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Admin" />}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
                       {user.last_sign_in_at
@@ -282,7 +285,6 @@ function AdminPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    {user.is_admin && <ShieldCheck className="h-5 w-5 text-primary" />}
                     <Button
                       type="button"
                       variant="ghost"
