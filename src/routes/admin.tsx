@@ -3,14 +3,23 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ArrowLeft,
+  Copy,
   KeyRound,
   Plus,
   RefreshCw,
+  Share2,
   ShieldCheck,
   Trash2,
   UserX,
   UserCheck,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogCancel,
