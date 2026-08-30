@@ -75,6 +75,36 @@ function AdminPage() {
   const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [shareTarget, setShareTarget] = useState<string | null>(null);
+  const [shareQr, setShareQr] = useState<string | null>(null);
+  const shareUrl = `${window.location.origin}/auth`;
+
+  useEffect(() => {
+    if (shareTarget === null) {
+      setShareQr(null);
+      return;
+    }
+    let cancelled = false;
+    void import("qrcode")
+      .then((QRCode) =>
+        QRCode.toDataURL(shareUrl, { width: 320, margin: 2 }),
+      )
+      .then((url) => {
+        if (!cancelled) setShareQr(url);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareTarget, shareUrl]);
+
+  async function handleCopyShare() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied — send it to the user");
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
 
   const sortedUsers = [...users].sort((a, b) =>
     (a?.username ?? "").localeCompare(b?.username ?? "", undefined, { sensitivity: "base" }),
