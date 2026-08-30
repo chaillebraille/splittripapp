@@ -146,6 +146,7 @@ function MemberPage() {
             settleCurrency={settleCurrency}
             deletingExpenseId={deletingExpenseId}
             onDelete={handleDeleteExpense}
+            canEdit={canWrite}
             emptyLabel="No expenses paid by this member."
           />
         </section>
@@ -159,6 +160,7 @@ function MemberPage() {
             settleCurrency={settleCurrency}
             deletingExpenseId={deletingExpenseId}
             onDelete={handleDeleteExpense}
+            canEdit={canWrite}
             shareAmounts={shareAmounts}
             emptyLabel="This member isn't part of any expense split."
           />
