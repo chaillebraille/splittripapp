@@ -1,10 +1,13 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CloudOff, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-provider";
 import { getStatus, setSyncEnabled, subscribeStatus, syncNow } from "@/lib/local/sync";
 import { ready } from "@/lib/local/store";
 import { refreshRates } from "@/lib/data/rates";
+
+const MANUAL_SYNC_COOLDOWN_MS = 10_000;
 
 const serverStatus = {
   syncing: false,
