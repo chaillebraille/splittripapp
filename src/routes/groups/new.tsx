@@ -8,6 +8,7 @@ import { createMember, suggestMembers } from "@/lib/members.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TripImagePicker } from "@/components/TripImagePicker";
 
 export const Route = createFileRoute("/groups/new")({
   ssr: false,
@@ -49,6 +50,7 @@ function NewGroupPage() {
 
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("EUR");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [members, setMembers] = useState<{ name: string; initial: string }[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +71,9 @@ function NewGroupPage() {
     if (!name.trim() || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const group = await createGroupFn({ data: { name: name.trim(), settle_currency: currency } });
+      const group = await createGroupFn({
+        data: { name: name.trim(), settle_currency: currency, image_url: imageUrl },
+      });
       for (const member of members) {
         await createMemberFn({ data: { group_id: group.id, name: member.name, initial: member.initial } });
       }
@@ -93,6 +97,15 @@ function NewGroupPage() {
 
       <form onSubmit={handleSubmit} className="flex-1 px-6 pb-28">
         <div className="space-y-6">
+          <div className="space-y-2">
+            <Label>Trip photo</Label>
+            <TripImagePicker
+              value={imageUrl}
+              onChange={setImageUrl}
+              fallback={name.trim().slice(0, 1).toUpperCase()}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Trip name</Label>
             <Input
