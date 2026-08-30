@@ -72,10 +72,13 @@ export function SyncIndicator() {
           <CloudOff className="h-3.5 w-3.5" />
         )}
         {status.online
-          ? `${status.pending} change${status.pending === 1 ? "" : "s"} to sync`
+          ? status.error && !status.syncing
+            ? `Sync issue · ${status.pending} pending`
+            : `${status.pending} change${status.pending === 1 ? "" : "s"} to sync`
           : status.pending > 0
             ? `Offline · ${status.pending} saved on device`
             : "Offline"}
+
       </div>
     </div>
   );
