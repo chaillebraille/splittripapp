@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const navigate = useNavigate();
-  const { email, displayName, isAdmin, signOut } = useAuth();
+  const { displayName, isAdmin, signOut } = useAuth();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const fetchGroups = listGroups;
   const { data: groups = [], isLoading } = useQuery({
@@ -48,8 +48,8 @@ function HomePage() {
       <header className="flex items-center justify-between gap-3 px-6 pt-8 pb-4">
         <div className="min-w-0">
           <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
-          {(displayName || email) && (
-            <p className="truncate text-xs text-muted-foreground">{displayName || email}</p>
+          {displayName && (
+            <p className="truncate text-xs text-muted-foreground">{displayName}</p>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
