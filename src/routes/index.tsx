@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Users, Wallet } from "lucide-react";
+import { LogOut, Plus, ShieldCheck, Users, Wallet } from "lucide-react";
 import { listGroups } from "@/lib/data/groups";
+import { useAuth } from "@/lib/auth-provider";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -17,16 +18,44 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const navigate = useNavigate();
+  const { email, isAdmin, signOut } = useAuth();
   const fetchGroups = listGroups;
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups"],
     queryFn: fetchGroups,
   });
 
+  async function handleSignOut() {
+    await signOut();
+    void navigate({ to: "/auth", search: { redirect: "/" }, replace: true });
+  }
+
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
-      <header className="px-6 pt-8 pb-4">
-        <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
+      <header className="flex items-center justify-between gap-3 px-6 pt-8 pb-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
+          {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              aria-label="Manage users"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+            >
+              <ShieldCheck className="h-5 w-5" />
+            </Link>
+          )}
+          <button
+            onClick={() => void handleSignOut()}
+            aria-label="Sign out"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 px-6 pb-24">
