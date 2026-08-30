@@ -61,6 +61,7 @@ export const updateGroup = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         name: z.string().min(1).max(100).optional(),
         settle_currency: z.string().min(1).max(3).optional(),
+        image_url: z.string().max(400000).nullable().optional(),
       })
       .parse(data)
   )
@@ -70,6 +71,7 @@ export const updateGroup = createServerFn({ method: "POST" })
       .update({
         ...(data.name ? { name: data.name } : {}),
         ...(data.settle_currency ? { settle_currency: data.settle_currency.toUpperCase() } : {}),
+        ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
       })
       .eq("id", data.id)
       .select()
