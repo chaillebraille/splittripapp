@@ -26,9 +26,11 @@ const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN
 function initialFromName(name: string) {
   const trimmed = name.trim();
   if (!trimmed) return "";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length > 1 && parts[0] && parts[1]) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length > 1) {
+    const first = parts[0] ?? "";
+    const second = parts[1] ?? "";
+    return (first.charAt(0) + second.charAt(0)).toUpperCase();
   }
   return trimmed.slice(0, 1).toUpperCase();
 }
