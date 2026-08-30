@@ -1,6 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, Plus, ShieldCheck, Users, Wallet } from "lucide-react";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listGroups } from "@/lib/data/groups";
 import { useAuth } from "@/lib/auth-provider";
 
@@ -19,7 +30,8 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const navigate = useNavigate();
-  const { email, isAdmin, signOut } = useAuth();
+  const { email, displayName, isAdmin, signOut } = useAuth();
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const fetchGroups = listGroups;
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups"],
@@ -36,7 +48,9 @@ function HomePage() {
       <header className="flex items-center justify-between gap-3 px-6 pt-8 pb-4">
         <div className="min-w-0">
           <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
-          {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
+          {(displayName || email) && (
+            <p className="truncate text-xs text-muted-foreground">{displayName || email}</p>
+          )}
         </div>
         <div className="flex shrink-0 gap-2">
           {isAdmin && (
@@ -49,7 +63,7 @@ function HomePage() {
             </Link>
           )}
           <button
-            onClick={() => void handleSignOut()}
+            onClick={() => setSignOutOpen(true)}
             aria-label="Sign out"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
           >
@@ -57,6 +71,21 @@ function HomePage() {
           </button>
         </div>
       </header>
+
+      <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll need to sign in again to see your trips on this device.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleSignOut()}>Sign out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <main className="flex-1 px-6 pb-24">
         {isLoading ? (
