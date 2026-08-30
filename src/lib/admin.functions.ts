@@ -131,13 +131,13 @@ export const adminSetUserDisabled = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     if (data.userId === context.userId && data.disabled) {
-      throw new Error("You can't disable your own account");
+      return { success: false as const, error: "You can't disable your own account" };
     }
     const admin = await loadAdmin();
     // Ban duration: ~100 years when disabling, "none" when re-enabling.
     const { error } = await admin.auth.admin.updateUserById(data.userId, {
       ban_duration: data.disabled ? "876000h" : "none",
     });
-    if (error) throw new Error(error.message);
-    return { success: true };
+    if (error) return { success: false as const, error: error.message };
+    return { success: true as const };
   });
