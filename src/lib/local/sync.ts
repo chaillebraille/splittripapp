@@ -142,12 +142,19 @@ export async function syncNow(): Promise<boolean> {
         failureCounts.delete(op.id);
       } catch (err) {
         if (typeof navigator !== "undefined" && navigator.onLine === false) throw err;
+        const message = err instanceof Error ? err.message : "Sync failed";
+        // Permission and validation failures will never succeed on retry
+        // (e.g. the owner revoked write access) — drop the op immediately.
+        const nonRetryable =
+          /row-level security|permission denied|not signed in|forbidden|only the trip owner/i.test(
+            message,
+          );
         const attempts = (failureCounts.get(op.id) ?? 0) + 1;
         failureCounts.set(op.id, attempts);
-        error = err instanceof Error ? err.message : "Sync failed";
-        console.warn("Sync operation failed", op.kind, attempts, error);
-        if (attempts < MAX_OP_ATTEMPTS) continue; // keep it queued for a later cycle
-        console.warn("Dropping sync operation after repeated failures", op.kind, error);
+        error = message;
+        console.warn("Sync operation failed", op.kind, attempts, message);
+        if (!nonRetryable && attempts < MAX_OP_ATTEMPTS) continue; // keep it queued for a later cycle
+        console.warn("Dropping sync operation", op.kind, message);
         failureCounts.delete(op.id);
       }
       setState((s) => ({ ...s, outbox: s.outbox.filter((o) => o.id !== op.id) }));
@@ -167,6 +174,8 @@ export async function syncNow(): Promise<boolean> {
         settle_currency: g.settle_currency,
         image_url: g.image_url ?? null,
         created_at: g.created_at,
+        created_by: g.created_by ?? null,
+        my_role: g.my_role ?? "owner",
       })),
       members: snapshot.members.map((m) => ({
         id: m.id,

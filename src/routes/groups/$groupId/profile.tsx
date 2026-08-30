@@ -1,9 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { deleteGroup, getGroup, updateGroup } from "@/lib/data/groups";
 import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/data/members";
+import {
+  createInvite,
+  listInvites,
+  listShares,
+  removeShare,
+  revokeInvite,
+  updateShareRole,
+} from "@/lib/sharing.functions";
 import { TripImagePicker } from "@/components/TripImagePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +34,9 @@ export const Route = createFileRoute("/groups/$groupId/profile")({
   head: () => ({
     meta: [
       { title: "Trip profile — SplitTrip" },
-      { name: "description", content: "Edit this trip's photo, name, settle currency, and members." },
+      { name: "description", content: "Edit this trip's photo, name, settle currency, members, and sharing." },
       { property: "og:title", content: "Trip profile — SplitTrip" },
-      { property: "og:description", content: "Edit this trip's photo, name, settle currency, and members." },
+      { property: "og:description", content: "Edit this trip's photo, name, settle currency, members, and sharing." },
     ],
   }),
   component: TripProfilePage,
@@ -44,6 +52,175 @@ function initialFromName(name: string) {
     return ((parts[0] ?? "").charAt(0) + (parts[1] ?? "").charAt(0)).toUpperCase();
   }
   return trimmed.slice(0, 1).toUpperCase();
+}
+
+function inviteLink(code: string) {
+  return `${window.location.origin}/join/${code}`;
+}
+
+function SharingSection({ groupId }: { groupId: string }) {
+  const queryClient = useQueryClient();
+  const { data: shares = [] } = useQuery({
+    queryKey: ["shares", groupId],
+    queryFn: () => listShares({ data: { groupId } }),
+  });
+  const { data: invites = [] } = useQuery({
+    queryKey: ["invites", groupId],
+    queryFn: () => listInvites({ data: { groupId } }),
+  });
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["shares", groupId] });
+    await queryClient.invalidateQueries({ queryKey: ["invites", groupId] });
+  }
+
+  async function handleCreateInvite(role: "viewer" | "editor") {
+    try {
+      const invite = await createInvite({ data: { groupId, role } });
+      await refresh();
+      await navigator.clipboard.writeText(inviteLink(invite.code)).catch(() => {});
+      toast.success(`${role === "editor" ? "Edit" : "View"} link created and copied`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create the link");
+    }
+  }
+
+  async function handleCopy(code: string) {
+    try {
+      await navigator.clipboard.writeText(inviteLink(code));
+      toast.success("Link copied");
+    } catch {
+      toast.message(inviteLink(code));
+    }
+  }
+
+  const activeInvites = invites.filter((i) => !i.revoked_at);
+
+  return (
+    <div className="space-y-3 border-t border-border pt-6">
+      <Label>Sharing</Label>
+      <p className="text-xs text-muted-foreground">
+        Share a link to let others see this trip. People with a view link can only look; people
+        with an edit link can add and change expenses and the trip photo.
+      </p>
+
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex-1 rounded-xl"
+          onClick={() => void handleCreateInvite("viewer")}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          New view link
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex-1 rounded-xl"
+          onClick={() => void handleCreateInvite("editor")}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          New edit link
+        </Button>
+      </div>
+
+      {activeInvites.length > 0 && (
+        <div className="space-y-2">
+          {activeInvites.map((invite) => (
+            <div
+              key={invite.id}
+              className="flex items-center gap-2 rounded-xl bg-card p-3 shadow-sm"
+            >
+              <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-card-foreground">
+                  {invite.role === "editor" ? "Edit link" : "View link"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {invite.uses} joined · {invite.code}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleCopy(invite.code)}
+                aria-label="Copy invite link"
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-accent"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void revokeInvite({ data: { inviteId: invite.id } })
+                    .then(refresh)
+                    .then(() => toast.success("Link revoked"))
+                    .catch((err) =>
+                      toast.error(err instanceof Error ? err.message : "Could not revoke the link"),
+                    )
+                }
+                aria-label="Revoke invite link"
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {shares.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">People with access</p>
+          {shares.map((share) => (
+            <div
+              key={share.id}
+              className="flex items-center gap-2 rounded-xl bg-card p-3 shadow-sm"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
+                {share.label.slice(0, 1).toUpperCase()}
+              </span>
+              <p className="min-w-0 flex-1 truncate text-sm font-medium text-card-foreground">
+                {share.label}
+              </p>
+              <select
+                value={share.role}
+                onChange={(e) =>
+                  void updateShareRole({
+                    data: { shareId: share.id, role: e.target.value as "viewer" | "editor" },
+                  })
+                    .then(refresh)
+                    .catch((err) =>
+                      toast.error(err instanceof Error ? err.message : "Could not change the role"),
+                    )
+                }
+                aria-label={`Role for ${share.label}`}
+                className="rounded-lg border border-input bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="viewer">View</option>
+                <option value="editor">Edit</option>
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  void removeShare({ data: { shareId: share.id } })
+                    .then(refresh)
+                    .then(() => toast.success("Access removed"))
+                    .catch((err) =>
+                      toast.error(err instanceof Error ? err.message : "Could not remove access"),
+                    )
+                }
+                aria-label={`Remove access for ${share.label}`}
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function TripProfilePage() {
@@ -65,9 +242,13 @@ function TripProfilePage() {
     queryKey: ["members", groupId],
     queryFn: () => fetchMembers({ data: { group_id: groupId } }),
   });
+  const myRole = group?.my_role ?? "owner";
+  const isOwner = myRole === "owner";
+  const canEditPhoto = myRole === "owner" || myRole === "editor";
   const { data: suggestions = [] } = useQuery({
     queryKey: ["member-suggestions"],
     queryFn: fetchSuggestions,
+    enabled: isOwner,
   });
 
   const [name, setName] = useState("");
@@ -137,16 +318,14 @@ function TripProfilePage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || isSaving) return;
+    if (isSaving) return;
+    if (isOwner && !name.trim()) return;
     setIsSaving(true);
     try {
       await update({
-        data: {
-          id: groupId,
-          name: name.trim(),
-          settle_currency: currency,
-          image_url: imageUrl,
-        },
+        data: isOwner
+          ? { id: groupId, name: name.trim(), settle_currency: currency, image_url: imageUrl }
+          : { id: groupId, image_url: imageUrl },
       });
       await queryClient.invalidateQueries({ queryKey: ["group", groupId] });
       await queryClient.invalidateQueries({ queryKey: ["groups"] });
@@ -159,6 +338,10 @@ function TripProfilePage() {
       setIsSaving(false);
     }
   }
+
+  const visibleSuggestions = suggestions.filter(
+    (s) => !members.some((m) => m.name.toLowerCase() === s.name.toLowerCase()),
+  );
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
@@ -174,11 +357,17 @@ function TripProfilePage() {
 
       <form onSubmit={handleSave} className="flex-1 px-6 pb-28">
         <div className="space-y-6">
+          {myRole === "viewer" && (
+            <p className="rounded-xl bg-secondary px-4 py-3 text-sm text-secondary-foreground">
+              This trip was shared with you as read-only. Only the owner can change its settings.
+            </p>
+          )}
+
           <div className="space-y-2">
             <Label>Trip photo</Label>
             <TripImagePicker
               value={imageUrl}
-              onChange={setImageUrl}
+              onChange={canEditPhoto ? setImageUrl : () => {}}
               fallback={name.trim().slice(0, 1).toUpperCase()}
             />
           </div>
@@ -189,6 +378,7 @@ function TripProfilePage() {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={!isOwner}
               className="rounded-xl"
             />
           </div>
@@ -199,7 +389,8 @@ function TripProfilePage() {
               id="currency"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring"
+              disabled={!isOwner}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
             >
               {COMMON_CURRENCIES.map((c) => (
                 <option key={c} value={c}>
@@ -222,115 +413,121 @@ function TripProfilePage() {
                       {member.initial || member.name.slice(0, 1).toUpperCase()}
                     </span>
                     {member.name}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMember(member.id)}
-                      aria-label={`Remove ${member.name}`}
-                      className="ml-1 rounded-full p-0.5 hover:bg-secondary-foreground/10"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(member.id)}
+                        aria-label={`Remove ${member.name}`}
+                        className="ml-1 rounded-full p-0.5 hover:bg-secondary-foreground/10"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Input
-                value={newMemberName}
-                onChange={(e) => setNewMemberName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void handleAddMember(newMemberName);
-                  }
-                }}
-                placeholder="Add a member"
-                className="rounded-xl"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void handleAddMember(newMemberName)}
-                aria-label="Add member"
-                className="shrink-0 rounded-xl"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {suggestions.filter(
-              (s) => !members.some((m) => m.name.toLowerCase() === s.name.toLowerCase())
-            ).length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Suggested from previous trips</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions
-                    .filter(
-                      (s) => !members.some((m) => m.name.toLowerCase() === s.name.toLowerCase())
-                    )
-                    .map((s) => (
-                      <button
-                        key={s.name}
-                        type="button"
-                        onClick={() => void handleAddMember(s.name, s.initial)}
-                        className="rounded-full border border-input bg-card px-3 py-1.5 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
-                      >
-                        + {s.name}
-                      </button>
-                    ))}
+            {isOwner && (
+              <>
+                <div className="flex gap-2">
+                  <Input
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleAddMember(newMemberName);
+                      }
+                    }}
+                    placeholder="Add a member"
+                    className="rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void handleAddMember(newMemberName)}
+                    aria-label="Add member"
+                    className="shrink-0 rounded-xl"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
+
+                {visibleSuggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Suggested from previous trips</p>
+                    <div className="flex flex-wrap gap-2">
+                      {visibleSuggestions.map((s) => (
+                        <button
+                          key={s.name}
+                          type="button"
+                          onClick={() => void handleAddMember(s.name, s.initial)}
+                          className="rounded-full border border-input bg-card px-3 py-1.5 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
+                        >
+                          + {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          <div className="space-y-2 border-t border-border pt-6">
-            <Label className="text-destructive">Danger zone</Label>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isDeleting}
-                  className="w-full rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete trip
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {group?.name ? `"${group.name}"` : "This trip"} and all its members and
-                    expenses will be permanently removed. This can't be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => void handleDeleteTrip()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          {isOwner && <SharingSection groupId={groupId} />}
+
+          {isOwner && (
+            <div className="space-y-2 border-t border-border pt-6">
+              <Label className="text-destructive">Danger zone</Label>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isDeleting}
+                    className="w-full rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete trip
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {group?.name ? `"${group.name}"` : "This trip"} and all its members and
+                      expenses will be permanently removed. This can't be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => void handleDeleteTrip()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete trip
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 p-4 backdrop-blur-sm">
-          <div className="mx-auto max-w-md">
-            <Button
-              type="submit"
-              disabled={!name.trim() || isSaving}
-              className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
-            >
-              Save trip
-            </Button>
+        {myRole !== "viewer" && (
+          <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 p-4 backdrop-blur-sm">
+            <div className="mx-auto max-w-md">
+              <Button
+                type="submit"
+                disabled={(isOwner && !name.trim()) || isSaving}
+                className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
+              >
+                Save trip
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </form>
     </div>
   );

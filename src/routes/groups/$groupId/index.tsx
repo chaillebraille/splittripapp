@@ -53,6 +53,8 @@ function GroupDashboardPage() {
   });
 
   const currentGroup = group ?? groups.find((g) => g.id === groupId);
+  const myRole = currentGroup?.my_role ?? "owner";
+  const canWrite = myRole !== "viewer";
 
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
@@ -143,14 +145,16 @@ function GroupDashboardPage() {
         <section className="mt-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Recent expenses</h2>
-            <Link
-              to="/groups/$groupId/expenses/new"
-              params={{ groupId }}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
-            >
-              <Plus className="h-4 w-4" />
-              Add
-            </Link>
+            {canWrite && (
+              <Link
+                to="/groups/$groupId/expenses/new"
+                params={{ groupId }}
+                className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
+              >
+                <Plus className="h-4 w-4" />
+                Add
+              </Link>
+            )}
           </div>
 
           <ExpenseList
@@ -160,6 +164,7 @@ function GroupDashboardPage() {
             settleCurrency={currentGroup?.settle_currency}
             deletingExpenseId={deletingExpenseId}
             onDelete={handleDeleteExpense}
+            canEdit={canWrite}
           />
         </section>
       </main>
@@ -173,13 +178,19 @@ function GroupDashboardPage() {
             <Wallet className="h-6 w-6" />
             Trips
           </Link>
-          <Link
-            to="/groups/$groupId/expenses/new"
-            params={{ groupId }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
-          >
-            <Plus className="h-6 w-6" />
-          </Link>
+          {canWrite ? (
+            <Link
+              to="/groups/$groupId/expenses/new"
+              params={{ groupId }}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </Link>
+          ) : (
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+              View
+            </span>
+          )}
           <Link
             to="/groups/$groupId/settle"
             params={{ groupId }}

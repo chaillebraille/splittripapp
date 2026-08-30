@@ -7,13 +7,28 @@ export const pullAll = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: groups, error: groupsError } = await context.supabase
       .from("groups")
-      .select("id, name, settle_currency, image_url, created_at")
+      .select("id, name, settle_currency, image_url, created_at, created_by")
       .order("created_at", { ascending: false });
     if (groupsError) throw new Error(groupsError.message);
 
-    const groupIds = (groups ?? []).map((g) => g.id);
+    // The caller's role per trip: owner, or the role granted by a share row.
+    const { data: shares, error: sharesError } = await context.supabase
+      .from("group_shares")
+      .select("group_id, role")
+      .eq("user_id", context.userId);
+    if (sharesError) throw new Error(sharesError.message);
+    const sharedRoles = new Map((shares ?? []).map((s) => [s.group_id, s.role]));
+
+    const groupsWithRole = (groups ?? []).map((g) => ({
+      ...g,
+      my_role: (g.created_by === context.userId
+        ? "owner"
+        : (sharedRoles.get(g.id) ?? "viewer")) as "owner" | "editor" | "viewer",
+    }));
+
+    const groupIds = groupsWithRole.map((g) => g.id);
     if (groupIds.length === 0) {
-      return { groups: groups ?? [], members: [], expenses: [], splits: [] };
+      return { groups: groupsWithRole, members: [], expenses: [], splits: [] };
     }
 
     const { data: members, error: membersError } = await context.supabase
@@ -42,5 +57,10 @@ export const pullAll = createServerFn({ method: "GET" })
       splits = splitRows ?? [];
     }
 
-    return { groups: groups ?? [], members: members ?? [], expenses: expenses ?? [], splits };
+    return {
+      groups: groupsWithRole,
+      members: members ?? [],
+      expenses: expenses ?? [],
+      splits,
+    };
   });

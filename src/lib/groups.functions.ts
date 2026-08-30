@@ -72,6 +72,18 @@ export const updateGroup = createServerFn({ method: "POST" })
       .parse(data)
   )
   .handler(async ({ context, data }) => {
+    // Editors may only change the trip photo; everything else is owner-only.
+    const { data: existing, error: lookupError } = await context.supabase
+      .from("groups")
+      .select("created_by")
+      .eq("id", data.id)
+      .single();
+    if (lookupError) throw new Error(lookupError.message);
+    const isOwner = existing.created_by === context.userId;
+    if (!isOwner && (data.name !== undefined || data.settle_currency !== undefined)) {
+      throw new Error("Only the trip owner can change the name or settle currency");
+    }
+
     const { data: group, error } = await context.supabase
       .from("groups")
       .update({
