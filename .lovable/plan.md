@@ -20,7 +20,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
    - Add/remove members (name + initial); individuals from previous groups are suggested when adding members to a new group.
    - Switch between groups.
 3. **Expenses**
-   - Add expense: amount, description, payer, equal split among selected members.
+   - Add expense: amount, description, payer, flexible split (equal among all by default, deselect individuals, or enter custom amounts).
    - Delete expense.
 4. **Settle up**
    - Suggested minimal payments to balance the group.
