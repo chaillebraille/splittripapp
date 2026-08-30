@@ -60,14 +60,16 @@ export const deleteMember = createServerFn({ method: "POST" })
     if (splitError) throw new Error(splitError.message);
 
     if ((paidCount ?? 0) > 0 || (splitCount ?? 0) > 0) {
-      throw new Error(
-        "This member is tied to existing expenses and can't be removed. Remove or reassign those expenses first."
-      );
+      return {
+        success: false as const,
+        error:
+          "This member is tied to existing expenses and can't be removed. Remove or reassign those expenses first.",
+      };
     }
 
     const { error } = await context.supabase.from("members").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { success: true };
+    return { success: true as const, error: null };
   });
 
 export const suggestMembers = createServerFn({ method: "GET" })
