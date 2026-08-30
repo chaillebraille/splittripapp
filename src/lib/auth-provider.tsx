@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void applyUser(
         session?.user?.id ?? null,
         session?.user?.email ?? null,
-        (session?.user?.user_metadata?.display_name as string | undefined) ?? null,
+        (session?.user?.user_metadata?.['display_name'] as string | undefined) ?? null,
       );
     });
 
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void applyUser(
         session?.user?.id ?? null,
         session?.user?.email ?? null,
-        (session?.user?.user_metadata?.display_name as string | undefined) ?? null,
+        (session?.user?.user_metadata?.['display_name'] as string | undefined) ?? null,
       );
     });
 
