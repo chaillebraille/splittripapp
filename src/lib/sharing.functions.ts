@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const shareRoleSchema = z.enum(["viewer", "editor"]);
 
-/** Owner: people this trip is shared with, including their emails. */
+/** Owner: people this trip is shared with, including their usernames. */
 export const listShares = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ groupId: z.string().uuid() }).parse(data))
@@ -16,21 +16,21 @@ export const listShares = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    // Emails come from profiles (joiner-visible) — owner can see profiles of
-    // people their trip is shared with via the share rows.
+    // Names come from profiles (owner can see profiles of people their trip is shared with).
     const userIds = (shares ?? []).map((s) => s.user_id);
-    let emails: Record<string, string> = {};
+    let names: Record<string, string> = {};
     if (userIds.length > 0) {
       const { data: profiles } = await context.supabase
         .from("profiles")
-        .select("user_id, email, display_name")
+        .select("user_id, display_name")
         .in("user_id", userIds);
-      emails = Object.fromEntries(
-        (profiles ?? []).map((p) => [p.user_id, p.display_name || p.email || "Unknown"]),
+      names = Object.fromEntries(
+        (profiles ?? []).map((p) => [p.user_id, p.display_name || "Unknown"]),
       );
     }
-    return (shares ?? []).map((s) => ({ ...s, label: emails[s.user_id] ?? "Unknown user" }));
+    return (shares ?? []).map((s) => ({ ...s, label: names[s.user_id] ?? "Unknown user" }));
   });
+
 
 export const updateShareRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
