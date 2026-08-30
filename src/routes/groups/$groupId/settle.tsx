@@ -75,8 +75,10 @@ function SettlePage() {
               const m = memberMap.get(b.member_id);
               const positive = b.net > 0;
               return (
-                <div
+                <Link
                   key={b.member_id}
+                  to="/groups/$groupId/members/$memberId"
+                  params={{ groupId, memberId: b.member_id }}
                   className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
@@ -98,7 +100,8 @@ function SettlePage() {
                       {positive ? "is owed" : b.net < 0 ? "owes" : "settled"}
                     </p>
                   </div>
-                </div>
+                </Link>
+
               );
             })}
           </div>
