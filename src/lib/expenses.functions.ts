@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const splitSchema = z.object({
   member_id: z.string().uuid(),
-  amount: z.number().positive(),
+  amount: z.number().nonnegative(),
 });
 
 const createExpenseSchema = z.object({

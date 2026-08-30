@@ -74,7 +74,7 @@ function EditExpensePage() {
     setSelectedMemberIds(splitMemberIds);
 
     const splits = expense.expense_splits ?? [];
-    const settleAmount = Number(expense.amount) / Number(expense.exchange_rate);
+    const settleAmount = Number(expense.amount) * Number(expense.exchange_rate);
     const equalShare = settleAmount / (splits.length || 1);
     const isEqual = splits.every((s) => Math.abs(Number(s.amount) - equalShare) < 0.01);
     setSplitMode(isEqual ? "equal" : "custom");
