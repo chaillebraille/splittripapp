@@ -41,13 +41,17 @@ export const createGroup = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: group, error } = await context.supabase
       .from("groups")
-      .insert({
-        ...(data.id ? { id: data.id } : {}),
-        created_by: context.userId,
-        name: data.name,
-        settle_currency: data.settle_currency.toUpperCase(),
-        image_url: data.image_url ?? null,
-      })
+      // Upsert so an offline replay of the same creation is idempotent.
+      .upsert(
+        {
+          ...(data.id ? { id: data.id } : {}),
+          created_by: context.userId,
+          name: data.name,
+          settle_currency: data.settle_currency.toUpperCase(),
+          image_url: data.image_url ?? null,
+        },
+        { onConflict: "id" }
+      )
       .select()
       .single();
 
@@ -77,7 +81,7 @@ export const updateGroup = createServerFn({ method: "POST" })
       })
       .eq("id", data.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(error.message);
     return group;
