@@ -1,10 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, KeyRound, Plus, ShieldCheck, UserX, UserCheck } from "lucide-react";
+import { ArrowLeft, KeyRound, Plus, ShieldCheck, Trash2, UserX, UserCheck } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-provider";
 import {
   adminCreateUser,
+  adminDeleteUser,
   adminResetPassword,
   adminSetUserDisabled,
   listUsers,
@@ -47,6 +58,12 @@ function AdminPage() {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+
+  const sortedUsers = [...users].sort((a, b) =>
+    a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
+  );
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -69,6 +86,20 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "Could not create the user");
     } finally {
       setIsBusy(false);
+    }
+  }
+
+  async function handleDeleteUser(targetId: string, label: string) {
+    try {
+      const result = await adminDeleteUser({ data: { userId: targetId } });
+      if (!result.success) {
+        toast.error(result.error ?? "Could not delete the account");
+        return;
+      }
+      toast.success(`${label} deleted`);
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete the account");
     }
   }
 
@@ -168,14 +199,19 @@ function AdminPage() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
-            users.map((user) => (
+            sortedUsers.map((user) => (
               <div key={user.id} className="rounded-2xl bg-card p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-card-foreground">{user.email}</p>
+                    <p className="truncate font-medium text-card-foreground">
+                      {user.display_name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                     <p className="text-xs text-muted-foreground">
-                      {user.is_admin ? "Admin · " : ""}
-                      {user.disabled ? "Disabled" : "Active"}
+                      {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
+                      {user.last_sign_in_at
+                        ? ` · last seen ${new Date(user.last_sign_in_at).toLocaleDateString()}`
+                        : " · never signed in"}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -184,27 +220,40 @@ function AdminPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={`Reset password for ${user.email}`}
-                      onClick={() => void handleResetPassword(user.id, user.email)}
+                      aria-label={`Reset password for ${user.display_name}`}
+                      onClick={() => setResetTarget({ id: user.id, label: user.display_name })}
                     >
                       <KeyRound className="h-4 w-4" />
                     </Button>
                     {user.id !== userId && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={
-                          user.disabled ? `Re-enable ${user.email}` : `Disable ${user.email}`
-                        }
-                        onClick={() => void handleToggleDisabled(user.id, user.disabled)}
-                      >
-                        {user.disabled ? (
-                          <UserCheck className="h-4 w-4" />
-                        ) : (
-                          <UserX className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={
+                            user.disabled
+                              ? `Re-enable ${user.display_name}`
+                              : `Disable ${user.display_name}`
+                          }
+                          onClick={() => void handleToggleDisabled(user.id, user.disabled)}
+                        >
+                          {user.disabled ? (
+                            <UserCheck className="h-4 w-4" />
+                          ) : (
+                            <UserX className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${user.display_name}`}
+                          onClick={() => setDeleteTarget({ id: user.id, label: user.display_name })}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -213,6 +262,59 @@ function AdminPage() {
           )}
         </section>
       </main>
+
+      <AlertDialog
+        open={resetTarget !== null}
+        onOpenChange={(open) => !open && setResetTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create a new password?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {resetTarget?.label}'s current password stops working immediately. The new password is
+              shown to you once — pass it on.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resetTarget) void handleResetPassword(resetTarget.id, resetTarget.label);
+                setResetTarget(null);
+              }}
+            >
+              Create password
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the account and every trip it owns, including those trips'
+              members and expenses. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) void handleDeleteUser(deleteTarget.id, deleteTarget.label);
+                setDeleteTarget(null);
+              }}
+            >
+              Delete account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
