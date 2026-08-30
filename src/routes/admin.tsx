@@ -159,7 +159,7 @@ function AdminPage() {
   async function handleResetPassword(targetId: string, label: string, password: string) {
     try {
       await adminResetPassword({ data: { userId: targetId, password } });
-      toast.success(`New password for ${label}: ${password}`, { duration: 20000 });
+      toast.success(`New password created for ${label}.`, { duration: 20000 });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not reset the password");
     }
