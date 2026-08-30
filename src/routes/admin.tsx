@@ -189,19 +189,23 @@ function AdminPage() {
                     >
                       <KeyRound className="h-4 w-4" />
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={user.disabled ? `Re-enable ${user.email}` : `Disable ${user.email}`}
-                      onClick={() => void handleToggleDisabled(user.id, user.disabled)}
-                    >
-                      {user.disabled ? (
-                        <UserCheck className="h-4 w-4" />
-                      ) : (
-                        <UserX className="h-4 w-4" />
-                      )}
-                    </Button>
+                    {user.id !== userId && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={
+                          user.disabled ? `Re-enable ${user.email}` : `Disable ${user.email}`
+                        }
+                        onClick={() => void handleToggleDisabled(user.id, user.disabled)}
+                      >
+                        {user.disabled ? (
+                          <UserCheck className="h-4 w-4" />
+                        ) : (
+                          <UserX className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
