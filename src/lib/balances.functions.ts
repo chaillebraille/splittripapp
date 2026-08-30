@@ -48,7 +48,7 @@ export const getBalances = createServerFn({ method: "GET" })
     for (const expense of expenses ?? []) {
       const payerId = expense.payer_id;
       if (payerId && balances.has(payerId)) {
-        balances.get(payerId)!.paid += Number(expense.settle_amount ?? expense.amount / expense.exchange_rate);
+        balances.get(payerId)!.paid += Number(expense.settle_amount ?? expense.amount * expense.exchange_rate);
       }
       for (const split of (expense.expense_splits ?? []) as { member_id: string; amount: number }[]) {
         if (balances.has(split.member_id)) {
