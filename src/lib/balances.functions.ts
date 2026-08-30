@@ -81,11 +81,11 @@ export const getBalances = createServerFn({ method: "GET" })
       .map((b) => ({ ...b, remaining: b.net }))
       .sort((a, b) => b.remaining - a.remaining);
 
-    let i = 0;
-    let j = 0;
-    while (i < debtors.length && j < creditors.length) {
-      const debtor = debtors[i];
-      const creditor = creditors[j];
+    let debtorIndex = 0;
+    let creditorIndex = 0;
+    while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+      const debtor = debtors[debtorIndex]!;
+      const creditor = creditors[creditorIndex]!;
       const amount = Math.min(debtor.remaining, creditor.remaining);
 
       suggestions.push({
@@ -97,8 +97,8 @@ export const getBalances = createServerFn({ method: "GET" })
       debtor.remaining -= amount;
       creditor.remaining -= amount;
 
-      if (debtor.remaining < 0.01) i++;
-      if (creditor.remaining < 0.01) j++;
+      if (debtor.remaining < 0.01) debtorIndex++;
+      if (creditor.remaining < 0.01) creditorIndex++;
     }
 
     return {
