@@ -195,6 +195,7 @@ function GroupDashboardPage() {
               type="submit"
               variant="secondary"
               disabled={!newMemberName.trim() || isAddingMember}
+              aria-label="Add member"
               className="shrink-0 rounded-xl"
             >
               <Plus className="h-4 w-4" />
