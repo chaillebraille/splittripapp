@@ -131,7 +131,7 @@ function AdminPage() {
     setIsBusy(true);
     try {
       await adminCreateUser({ data: { username: username.trim(), password: newPassword } });
-      toast.success(`Account created. Password: ${newPassword}`, { duration: 20000 });
+      toast.success("Account created");
       setUsername("");
       setNewPassword(generatePassword());
       await refresh();
