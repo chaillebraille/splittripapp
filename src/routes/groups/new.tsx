@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { createGroup } from "@/lib/groups.functions";
+import { createMember, suggestMembers } from "@/lib/members.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,19 +23,53 @@ export const Route = createFileRoute("/groups/new")({
 
 const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN"];
 
+function initialFromName(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length > 1) {
+    return (parts[0]![0] + parts[1]![0]).toUpperCase();
+  }
+  return trimmed.slice(0, 1).toUpperCase();
+}
+
 function NewGroupPage() {
   const navigate = useNavigate();
-  const create = useServerFn(createGroup);
+  const createGroupFn = useServerFn(createGroup);
+  const createMemberFn = useServerFn(createMember);
+  const fetchSuggestions = useServerFn(suggestMembers);
+
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["member-suggestions"],
+    queryFn: fetchSuggestions,
+  });
+
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("EUR");
+  const [members, setMembers] = useState<{ name: string; initial: string }[]>([]);
+  const [newMemberName, setNewMemberName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function addMember(name: string, initial?: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (members.some((m) => m.name.toLowerCase() === trimmed.toLowerCase())) return;
+    setMembers((prev) => [...prev, { name: trimmed, initial: initial?.toUpperCase() || initialFromName(trimmed) }]);
+  }
+
+  function removeMember(index: number) {
+    setMembers((prev) => prev.filter((_, i) => i !== index));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const group = await create({ data: { name: name.trim(), settle_currency: currency } });
+      const group = await createGroupFn({ data: { name: name.trim(), settle_currency: currency } });
+      for (const member of members) {
+        await createMemberFn({ data: { group_id: group.id, name: member.name, initial: member.initial } });
+      }
       navigate({ to: "/groups/$groupId", params: { groupId: group.id } });
     } finally {
       setIsSubmitting(false);
@@ -52,7 +88,7 @@ function NewGroupPage() {
         <h1 className="font-display text-3xl font-bold text-foreground">New trip</h1>
       </header>
 
-      <form onSubmit={handleSubmit} className="flex-1 px-6 pb-24">
+      <form onSubmit={handleSubmit} className="flex-1 px-6 pb-28">
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Trip name</Label>
@@ -83,6 +119,77 @@ function NewGroupPage() {
             <p className="text-xs text-muted-foreground">
               All expenses will be converted to this currency for balances.
             </p>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Members</Label>
+            {members.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {members.map((member, index) => (
+                  <div
+                    key={member.name}
+                    className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                      {member.initial}
+                    </span>
+                    {member.name}
+                    <button
+                      type="button"
+                      onClick={() => removeMember(index)}
+                      className="ml-1 rounded-full p-0.5 hover:bg-secondary-foreground/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addMember(newMemberName);
+                    setNewMemberName("");
+                  }
+                }}
+                placeholder="Add a member"
+                className="rounded-xl"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  addMember(newMemberName);
+                  setNewMemberName("");
+                }}
+                className="shrink-0 rounded-xl"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {suggestions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Suggested from previous trips</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => addMember(s.name, s.initial)}
+                      className="rounded-full border border-input bg-card px-3 py-1.5 text-sm font-medium text-card-foreground transition-colors hover:bg-accent"
+                    >
+                      + {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
