@@ -27,7 +27,7 @@ where each person sees only their own trips, plus explicit per-trip sharing with
 - Anyone signed in who opens the link joins the trip in that role. The owner sees a list of
   people the trip is shared with, can change a person's role, and can revoke access.
 - Regardless of role, only the **owner** can rename/delete the trip, change the settle currency
-  or the trip photo, add/remove members, and manage sharing.
+or the trip photo (editors can change this too), add/remove members, and manage sharing.
 - Links can be revoked and optionally expire; a revoked link stops working immediately.
 
 ## No name collisions between owners
