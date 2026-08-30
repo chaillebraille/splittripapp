@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { getGroup } from "@/lib/groups.functions";
 import { listMembers, suggestMembers } from "@/lib/members.functions";
-import { createExpense } from "@/lib/expenses.functions";
+import { createExpense, listExpenses } from "@/lib/expenses.functions";
 import { getExchangeRate } from "@/lib/exchange-rate.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
