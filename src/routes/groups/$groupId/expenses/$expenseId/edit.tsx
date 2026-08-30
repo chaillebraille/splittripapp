@@ -74,14 +74,15 @@ function EditExpensePage() {
     setSelectedMemberIds(splitMemberIds);
 
     const splits = expense.expense_splits ?? [];
-    const settleAmount = Number(expense.amount) * Number(expense.exchange_rate);
-    const equalShare = settleAmount / (splits.length || 1);
-    const isEqual = splits.every((s) => Math.abs(Number(s.amount) - equalShare) < 0.01);
+    const rate = Number(expense.exchange_rate) || 1;
+    // Stored splits are in the settle currency; the form works in the expense currency.
+    const equalShare = Number(expense.amount) / (splits.length || 1);
+    const isEqual = splits.every((s) => Math.abs(Number(s.amount) / rate - equalShare) < 0.01);
     setSplitMode(isEqual ? "equal" : "custom");
 
     const amounts: Record<string, string> = {};
     for (const s of splits) {
-      amounts[s.member_id] = String(s.amount);
+      amounts[s.member_id] = (Number(s.amount) / rate).toFixed(2);
     }
     setCustomAmounts(amounts);
   }, [expense]);
