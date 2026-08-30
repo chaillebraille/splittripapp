@@ -38,6 +38,8 @@ function SettlePage() {
   });
 
   const memberMap = new Map(members.map((m) => [m.id, m]));
+  const totalSpent = balances?.balances.reduce((sum, b) => sum + b.paid, 0) ?? 0;
+  const payments = balances?.suggestions ?? [];
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
@@ -56,12 +58,12 @@ function SettlePage() {
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <p className="text-sm font-medium text-muted-foreground">Trip total</p>
           <p className="font-display text-3xl font-bold text-card-foreground">
-            {balances?.totalSpent.toFixed(2) ?? "0.00"} {group?.settle_currency ?? "EUR"}
+            {totalSpent.toFixed(2)} {group?.settle_currency ?? "EUR"}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {balances?.payments.length === 0
+            {payments.length === 0
               ? "All even — no payments needed"
-              : `${balances?.payments.length} payment${balances?.payments.length === 1 ? "" : "s"} suggested`}
+              : `${payments.length} payment${payments.length === 1 ? "" : "s"} suggested`}
           </p>
         </div>
 
@@ -103,40 +105,34 @@ function SettlePage() {
 
         <section className="mt-6">
           <h2 className="mb-3 text-lg font-semibold text-foreground">Minimal payments</h2>
-          {balances?.payments.length === 0 ? (
+          {payments.length === 0 ? (
             <div className="rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm">
               <Wallet className="mx-auto mb-2 h-8 w-8" />
               Everyone is even.
             </div>
           ) : (
             <div className="space-y-3">
-              {balances?.payments.map((p, i) => {
-                const from = memberMap.get(p.from_member_id);
-                const to = memberMap.get(p.to_member_id);
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                        <ArrowRightLeft className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-card-foreground">
-                          {from?.name} pays {to?.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          to settle the balance
-                        </p>
-                      </div>
+              {payments.map((p, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                      <ArrowRightLeft className="h-4 w-4 text-primary" />
                     </div>
-                    <p className="font-semibold text-card-foreground">
-                      {p.amount.toFixed(2)} {group?.settle_currency ?? "EUR"}
-                    </p>
+                    <div>
+                      <p className="font-medium text-card-foreground">
+                        {p.from.name} pays {p.to.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">to settle the balance</p>
+                    </div>
                   </div>
-                );
-              })}
+                  <p className="font-semibold text-card-foreground">
+                    {p.amount.toFixed(2)} {group?.settle_currency ?? "EUR"}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </section>
