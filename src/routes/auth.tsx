@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 
 export const Route = createFileRoute("/auth")({
@@ -45,6 +46,7 @@ function AuthPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
   const needsSetup = setup?.needsSetup ?? false;
