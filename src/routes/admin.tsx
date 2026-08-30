@@ -287,6 +287,15 @@ function AdminPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
+                      aria-label={`Share app link for ${user.username}`}
+                      onClick={() => setShareTarget(user.username)}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={`Reset password for ${user.username}`}
                       onClick={() => {
                         setResetPassword(generatePassword());
