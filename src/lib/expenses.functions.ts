@@ -155,7 +155,8 @@ export const upsertExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => upsertExpenseSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const { splits, ...expense } = data;
+    // settle_amount is a generated column in the database.
+    const { splits, settle_amount: _settleAmount, ...expense } = data;
 
     const { error: expenseError } = await context.supabase
       .from("expenses")
