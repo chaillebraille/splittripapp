@@ -17,7 +17,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
    - Per-person balances list.
 2. **Groups**
    - Create a group with a name and a main settle-currency. Expenses can be entered in any currency; each is converted to the settle-currency using one rate per trip (fetched when the expense is first added and cached for the group, since trips are ~a week long), with the proposed rate editable per expense.
-   - Add/remove members (name + initial).
+   - Add/remove members (name + initial); individuals from previous groups are suggested when adding members to a new group.
    - Switch between groups.
 3. **Expenses**
    - Add expense: amount, description, payer, equal split among selected members.
