@@ -22,7 +22,7 @@ Build a scaled-down, mobile-first cost-splitting PWA using the **Serene Organic 
 3. **Expenses**
    - Add expense: amount, description, date (defaults to today, editable), payer, flexible split (equal among all by default, deselect individuals, or enter custom amounts).
    - Edit and delete expenses.
-4. **Settle up**
+4. **Balances & settle up**
    - Suggested minimal payments to balance the group.
    - Show minimal payment suggestions (no persistent "settled" state).
 5. **PWA**
