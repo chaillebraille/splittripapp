@@ -57,12 +57,24 @@ function NewExpensePage() {
   const [splitMode, setSplitMode] = useState<"equal" | "custom">("equal");
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["expenses", groupId],
+    queryFn: () => fetchExpenses({ data: { group_id: groupId } }),
+  });
 
   useEffect(() => {
-    if (group?.settle_currency && !currency) {
+    if (currencyTouched) return;
+    // Default to the currency of the most recently entered expense;
+    // fall back to the trip settle currency when there are no expenses yet.
+    const latest = expenses[0]?.currency;
+    if (latest) {
+      setCurrency(latest);
+    } else if (group?.settle_currency) {
       setCurrency(group.settle_currency);
     }
-  }, [group?.settle_currency]);
+  }, [expenses, group?.settle_currency, currencyTouched]);
 
   useEffect(() => {
     if (members.length > 0 && !payerId) {
