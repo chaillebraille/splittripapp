@@ -32,12 +32,16 @@ export const createMember = createServerFn({ method: "POST" })
 
     const { data: member, error } = await context.supabase
       .from("members")
-      .insert({
-        ...(data.id ? { id: data.id } : {}),
-        group_id: data.group_id,
-        name: data.name.trim(),
-        initial,
-      })
+      // Upsert so an offline replay of the same creation is idempotent.
+      .upsert(
+        {
+          ...(data.id ? { id: data.id } : {}),
+          group_id: data.group_id,
+          name: data.name.trim(),
+          initial,
+        },
+        { onConflict: "id" }
+      )
       .select()
       .single();
 

@@ -1,13 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Plus, X } from "lucide-react";
-import { getGroup, updateGroup } from "@/lib/data/groups";
+import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
+import { deleteGroup, getGroup, updateGroup } from "@/lib/data/groups";
 import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/data/members";
 import { TripImagePicker } from "@/components/TripImagePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/groups/$groupId/profile")({
@@ -64,6 +75,7 @@ function TripProfilePage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [newMemberName, setNewMemberName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!group) return;
@@ -106,6 +118,20 @@ function TripProfilePage() {
       await refreshMembers();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not remove member");
+    }
+  }
+
+  async function handleDeleteTrip() {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteGroup({ data: { id: groupId } });
+      await queryClient.invalidateQueries({ queryKey: ["groups"] });
+      toast.success("Trip deleted");
+      navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete the trip");
+      setIsDeleting(false);
     }
   }
 
@@ -256,6 +282,41 @@ function TripProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="space-y-2 border-t border-border pt-6">
+            <Label className="text-destructive">Danger zone</Label>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isDeleting}
+                  className="w-full rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete trip
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {group?.name ? `"${group.name}"` : "This trip"} and all its members and
+                    expenses will be permanently removed. This can't be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => void handleDeleteTrip()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete trip
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 

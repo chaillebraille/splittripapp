@@ -132,12 +132,11 @@ export async function syncNow(): Promise<boolean> {
 
   let changed = false;
   try {
-    // 1. Replay pending local mutations, oldest first. A single bad op must not
-    //    block the whole queue forever: retry it a few times, then drop it.
-    let guard = 0;
-    while (getState().outbox.length > 0 && guard < 500) {
-      guard += 1;
-      const op = getState().outbox[0]!;
+    // 1. Replay pending local mutations, oldest first. A failing op must never
+    //    block the ones behind it: retry it a few times, then drop it, and keep
+    //    working through the rest of the queue in the same cycle.
+    const ops = [...getState().outbox];
+    for (const op of ops) {
       try {
         await applyOp(op);
         failureCounts.delete(op.id);
@@ -146,18 +145,19 @@ export async function syncNow(): Promise<boolean> {
         const attempts = (failureCounts.get(op.id) ?? 0) + 1;
         failureCounts.set(op.id, attempts);
         error = err instanceof Error ? err.message : "Sync failed";
-        if (attempts < MAX_OP_ATTEMPTS) {
-          // Leave it queued and stop this cycle; a later cycle retries it.
-          throw err;
-        }
+        console.warn("Sync operation failed", op.kind, attempts, error);
+        if (attempts < MAX_OP_ATTEMPTS) continue; // keep it queued for a later cycle
         console.warn("Dropping sync operation after repeated failures", op.kind, error);
         failureCounts.delete(op.id);
       }
       setState((s) => ({ ...s, outbox: s.outbox.filter((o) => o.id !== op.id) }));
     }
 
-    // 2. Pull the cloud snapshot back down (safe: the outbox is empty now).
+    // 2. Pull the cloud snapshot back down, but only once every local change has
+    //    been accepted — otherwise the pull would wipe unsynced work.
+    if (getState().outbox.length > 0) return false;
     const snapshot = await pullAll();
+
 
     setState((s) => ({
       ...s,
