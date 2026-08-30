@@ -7,6 +7,7 @@ import { listMembers } from "@/lib/members.functions";
 import { getBalances } from "@/lib/balances.functions";
 
 export const Route = createFileRoute("/groups/$groupId/settle")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Settle up — SplitTrip" },

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/groups/$groupId/expenses/new")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Add expense — SplitTrip" },
