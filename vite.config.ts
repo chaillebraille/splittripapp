@@ -20,6 +20,8 @@ export default defineConfig({
         registerType: "autoUpdate",
         injectRegister: null,
         filename: "sw.js",
+        // Emit alongside the client assets so /sw.js is actually served.
+        outDir: "dist/client",
         devOptions: { enabled: false },
         manifest: false,
         workbox: {
