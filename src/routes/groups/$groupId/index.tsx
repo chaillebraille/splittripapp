@@ -106,7 +106,11 @@ function GroupDashboardPage() {
       </header>
 
       <main className="flex-1 px-6 pb-28">
-        <div className="rounded-2xl bg-card p-6 shadow-sm">
+        <Link
+          to="/groups/$groupId/settle"
+          params={{ groupId }}
+          className="block rounded-2xl bg-card p-6 shadow-sm transition-transform active:scale-[0.99]"
+        >
           <p className="text-sm font-medium text-muted-foreground">Total expenses</p>
           <p className="mt-2 font-display text-3xl font-bold text-foreground">
             {totalExpense.toFixed(2)} {currentGroup?.settle_currency ?? ""}
@@ -115,7 +119,8 @@ function GroupDashboardPage() {
             {members.length} {members.length === 1 ? "member" : "members"} ·{" "}
             {expenses.length} {expenses.length === 1 ? "expense" : "expenses"}
           </p>
-        </div>
+        </Link>
+
 
         <section className="mt-6">
           <h2 className="mb-3 text-lg font-semibold text-foreground">Members</h2>

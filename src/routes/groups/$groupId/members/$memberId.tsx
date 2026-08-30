@@ -59,8 +59,17 @@ function MemberPage() {
   const memberBalance = balances?.balances.find((b) => b.member_id === memberId);
   const settleCurrency = group?.settle_currency ?? "";
   const paidExpenses = expenses.filter((e) => e.payer_id === memberId);
+  const shareAmounts: Record<string, number> = {};
+  for (const e of expenses) {
+    const split = ((e.expense_splits ?? []) as { member_id: string; amount: number }[]).find(
+      (s) => s.member_id === memberId
+    );
+    if (split) shareAmounts[e.id] = Number(split.amount ?? 0);
+  }
+  const sharedExpenses = expenses.filter((e) => shareAmounts[e.id] !== undefined);
   const totalPaid = paidExpenses.reduce((sum, e) => sum + Number(e.settle_amount ?? 0), 0);
   const net = memberBalance?.net ?? 0;
+
 
   async function handleDeleteExpense(id: string) {
     if (deletingExpenseId) return;
@@ -140,6 +149,21 @@ function MemberPage() {
             emptyLabel="No expenses paid by this member."
           />
         </section>
+
+        <section className="mt-6">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">Expenses shared in</h2>
+          <ExpenseList
+            expenses={sharedExpenses}
+            members={members}
+            groupId={groupId}
+            settleCurrency={settleCurrency}
+            deletingExpenseId={deletingExpenseId}
+            onDelete={handleDeleteExpense}
+            shareAmounts={shareAmounts}
+            emptyLabel="This member isn't part of any expense split."
+          />
+        </section>
+
 
         <Link
           to="/groups/$groupId/profile"

@@ -1,6 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { MoreHorizontal, Receipt, Trash2 } from "lucide-react";
+import { Receipt, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type ExpenseListItem = {
   id: string;
@@ -20,6 +31,8 @@ type Props = {
   deletingExpenseId: string | null;
   onDelete: (id: string) => void;
   emptyLabel?: string;
+  /** When provided, the secondary line shows "Your share: <amount>" instead of the converted total. */
+  shareAmounts?: Record<string, number>;
 };
 
 export function ExpenseList({
@@ -30,7 +43,10 @@ export function ExpenseList({
   deletingExpenseId,
   onDelete,
   emptyLabel = "No expenses yet.",
+  shareAmounts,
 }: Props) {
+  const [pendingDelete, setPendingDelete] = useState<ExpenseListItem | null>(null);
+
   if (expenses.length === 0) {
     return (
       <div className="rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm">
@@ -41,53 +57,76 @@ export function ExpenseList({
   }
 
   return (
-    <div className="space-y-3">
-      {expenses.map((expense) => {
-        const payer = members.find((m) => m.id === expense.payer_id);
-        return (
-          <div
-            key={expense.id}
-            className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-card-foreground">{expense.description}</p>
-              <p className="text-xs text-muted-foreground">
-                Paid by {payer?.name ?? "Unknown"} ·{" "}
-                {format(new Date(expense.expense_date), "MMM d")}
-              </p>
+    <>
+      <div className="space-y-3">
+        {expenses.map((expense) => {
+          const payer = members.find((m) => m.id === expense.payer_id);
+          return (
+            <div
+              key={expense.id}
+              className="flex items-center gap-2 rounded-2xl bg-card p-4 shadow-sm"
+            >
+              <Link
+                to="/groups/$groupId/expenses/$expenseId/edit"
+                params={{ groupId, expenseId: expense.id }}
+                className="flex min-w-0 flex-1 items-center justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-card-foreground">{expense.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Paid by {payer?.name ?? "Unknown"} ·{" "}
+                    {format(new Date(expense.expense_date), "MMM d")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-card-foreground">
+                    {expense.amount} {expense.currency}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {shareAmounts
+                      ? `Your share: ${Number(shareAmounts[expense.id] ?? 0).toFixed(2)} ${settleCurrency ?? ""}`
+                      : `≈ ${Number(expense.settle_amount ?? 0).toFixed(2)} ${settleCurrency ?? ""}`}
+                  </p>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setPendingDelete(expense)}
+                disabled={deletingExpenseId === expense.id}
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Delete expense"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
-            <div className="flex items-center gap-3 text-right">
-              <div>
-                <p className="font-semibold text-card-foreground">
-                  {expense.amount} {expense.currency}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  ≈ {Number(expense.settle_amount ?? 0).toFixed(2)} {settleCurrency}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Link
-                  to="/groups/$groupId/expenses/$expenseId/edit"
-                  params={{ groupId, expenseId: expense.id }}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
-                  aria-label="Edit expense"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => onDelete(expense.id)}
-                  disabled={deletingExpenseId === expense.id}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                  aria-label="Delete expense"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.description
+                ? `"${pendingDelete.description}" will be permanently removed.`
+                : "This expense will be permanently removed."}{" "}
+              This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDelete) onDelete(pendingDelete.id);
+                setPendingDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
