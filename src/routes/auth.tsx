@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 
 export const Route = createFileRoute("/auth")({
@@ -45,6 +46,7 @@ function AuthPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
   const needsSetup = setup?.needsSetup ?? false;
@@ -142,22 +144,35 @@ function AuthPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type={needsSetup ? "text" : "password"}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={needsSetup ? "At least 12 characters" : "Your password"}
-            className={needsSetup ? "rounded-xl font-mono" : "rounded-xl"}
-            autoComplete={needsSetup ? "new-password" : "current-password"}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={needsSetup || showPassword ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={needsSetup ? "At least 12 characters" : "Your password"}
+              className={needsSetup ? "rounded-xl pr-11 font-mono" : "rounded-xl pr-11"}
+              autoComplete={needsSetup ? "new-password" : "current-password"}
+            />
+            {!needsSetup && (
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
           {needsSetup && (
             <p className="text-xs text-muted-foreground">
               Suggested password — you can replace it. Write it down.
             </p>
           )}
         </div>
+
         <Button
           type="submit"
           disabled={isBusy || setupLoading}
