@@ -38,3 +38,11 @@ export function usernameToEmail(input: string): string {
   }
   return `u${encoded}@${USERNAME_DOMAIN}`;
 }
+
+/** Zod-compatible parser: normalizes and validates a username. */
+export function parseUsername(input: unknown): string {
+  if (typeof input !== "string") throw new Error("Invalid username");
+  const error = validateUsername(input);
+  if (error) throw new Error(error);
+  return normalizeUsername(input);
+}
