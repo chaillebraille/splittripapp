@@ -266,18 +266,21 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          default_member_name: string | null
           display_name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          default_member_name?: string | null
           display_name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          default_member_name?: string | null
           display_name?: string | null
           updated_at?: string
           user_id?: string
@@ -318,6 +321,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      invite_preview: {
+        Args: { _code: string }
+        Returns: {
+          group_name: string
+          role: Database["public"]["Enums"]["share_role"]
+        }[]
       }
       is_group_owner: { Args: { _group_id: string }; Returns: boolean }
       redeem_group_invite: { Args: { _code: string }; Returns: string }

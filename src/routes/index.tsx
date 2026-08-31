@@ -29,25 +29,37 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const navigate = useNavigate();
-  const { displayName, isAdmin, signOut } = useAuth();
-  const [signOutOpen, setSignOutOpen] = useState(false);
+  const { displayName, isAdmin } = useAuth();
+  const [versionOpen, setVersionOpen] = useState(false);
+  const [latestVersion, setLatestVersion] = useState<number | null>(null);
+  const [checking, setChecking] = useState(false);
   const fetchGroups = listGroups;
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups"],
     queryFn: fetchGroups,
   });
 
-  async function handleSignOut() {
-    await signOut();
-    void navigate({ to: "/auth", search: { redirect: "/" }, replace: true });
+  async function openVersionDialog() {
+    setVersionOpen(true);
+    setChecking(true);
+    const published = await fetchPublishedVersion();
+    setLatestVersion(published);
+    setChecking(false);
   }
+
+  const updateAvailable = latestVersion !== null && latestVersion > APP_VERSION;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
       <header className="flex items-center justify-between gap-3 px-6 pt-8 pb-4">
         <div className="min-w-0">
-          <h1 className="font-display text-4xl font-bold text-foreground">SplitTrip</h1>
+          <button
+            type="button"
+            onClick={() => void openVersionDialog()}
+            className="text-left font-display text-4xl font-bold text-foreground"
+          >
+            SplitTrip
+          </button>
           {displayName && (
             <p className="truncate text-xs text-muted-foreground">{displayName}</p>
           )}
@@ -62,30 +74,46 @@ function HomePage() {
               <ShieldCheck className="h-5 w-5" />
             </Link>
           )}
-          <button
-            onClick={() => setSignOutOpen(true)}
-            aria-label="Sign out"
+          <Link
+            to="/profile"
+            aria-label="Your profile"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
           >
-            <LogOut className="h-5 w-5" />
-          </button>
+            <User className="h-5 w-5" />
+          </Link>
         </div>
       </header>
 
-      <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Sign out?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You'll need to sign in again to see your trips on this device.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleSignOut()}>Sign out</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>SplitTrip</DialogTitle>
+            <DialogDescription>App version information.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">
+              Installed version: <span className="font-semibold">{APP_VERSION}</span>
+            </p>
+            <p className="text-muted-foreground">
+              {checking
+                ? "Checking for updates…"
+                : latestVersion === null
+                  ? "Latest version unavailable (offline)."
+                  : `Latest published version: ${latestVersion}`}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => void applyAppUpdate()}
+              disabled={!updateAvailable}
+              className="w-full rounded-xl"
+            >
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <main className="flex-1 px-6 pb-24">
         {isLoading ? (

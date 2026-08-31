@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-provider";
+import { loadMemberName, readCachedMemberName } from "@/lib/data/profile";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { createGroup } from "@/lib/data/groups";
 import { createMember, suggestMembers } from "@/lib/data/members";
@@ -38,6 +40,7 @@ function initialFromName(name: string) {
 
 function NewGroupPage() {
   const navigate = useNavigate();
+  const { userId, displayName } = useAuth();
   const createGroupFn = createGroup;
   const createMemberFn = createMember;
   const fetchSuggestions = suggestMembers;
@@ -50,9 +53,28 @@ function NewGroupPage() {
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("EUR");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [members, setMembers] = useState<{ name: string; initial: string }[]>([]);
+  const [members, setMembers] = useState<{ name: string; initial: string }[]>(() => {
+    const cached = readCachedMemberName(userId);
+    return cached ? [{ name: cached, initial: initialFromName(cached) }] : [];
+  });
   const [newMemberName, setNewMemberName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // A new trip always starts with the signed-in user's own member.
+  useEffect(() => {
+    let cancelled = false;
+    void loadMemberName(userId, displayName).then((own) => {
+      if (cancelled || !own.trim()) return;
+      setMembers((prev) =>
+        prev.some((m) => m.name.toLowerCase() === own.trim().toLowerCase())
+          ? prev
+          : [{ name: own.trim(), initial: initialFromName(own) }, ...prev],
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, displayName]);
 
   function addMember(name: string, initial?: string) {
     const trimmed = name.trim();
