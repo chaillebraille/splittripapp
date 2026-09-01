@@ -47,9 +47,15 @@ function HomePage() {
     setInstalledVersion(APP_VERSION);
   }, []);
 
+  const queryClient = useQueryClient();
+
   async function openVersionDialog() {
     setVersionOpen(true);
     setChecking(true);
+    // Opening this dialog is a sync event: sync pending changes first
+    // (offline edits must reach the server), then fetch the latest version.
+    const changed = await syncNow();
+    if (changed) queryClient.invalidateQueries();
     const published = await fetchPublishedVersion();
     setLatestVersion(published);
     setChecking(false);
