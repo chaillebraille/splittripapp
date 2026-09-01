@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { syncNow } from "@/lib/local/sync";
 import { Plus, ShieldCheck, User, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
