@@ -39,6 +39,36 @@ function UserProfilePage() {
   const { userId, displayName, signOut } = useAuth();
   const [memberName, setMemberName] = useState(() => readCachedMemberName(userId) ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  function openPasswordDialog(open: boolean) {
+    setPwOpen(open);
+    if (open) {
+      setCurrentPassword("");
+      setNewPassword(generatePassword());
+    }
+  }
+
+  async function handleChangePassword() {
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+      ...(currentPassword ? { current_password: currentPassword } : {}),
+    } as Parameters<typeof supabase.auth.updateUser>[0]);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPwOpen(false);
+    toast.success("New password created.", { duration: 20000 });
+  }
+
 
   useEffect(() => {
     let cancelled = false;
