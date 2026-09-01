@@ -115,8 +115,12 @@ function MemberPage() {
               {totalPaid.toFixed(2)}
             </p>
             <p className="text-xs text-muted-foreground">{settleCurrency}</p>
-          </div>
-          <div className="rounded-2xl bg-card p-4 shadow-sm">
+          </Link>
+          <Link
+            to="/groups/$groupId/settle"
+            params={{ groupId }}
+            className="block rounded-2xl bg-card p-4 shadow-sm transition-transform active:scale-[0.98]"
+          >
             <p className="text-xs font-medium text-muted-foreground">Balance</p>
             <p
               className={`mt-1 font-display text-2xl font-bold ${
@@ -129,17 +133,21 @@ function MemberPage() {
             <p className="text-xs text-muted-foreground">
               {net > 0.005 ? "is owed" : net < -0.005 ? "owes" : "all even"} · {settleCurrency}
             </p>
-          </div>
+          </Link>
         </div>
 
-        <div className="mt-3 rounded-2xl bg-card p-4 text-sm shadow-sm">
+        <Link
+          to="/groups/$groupId/settle"
+          params={{ groupId }}
+          className="mt-3 block rounded-2xl bg-card p-4 text-sm shadow-sm transition-transform active:scale-[0.98]"
+        >
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Share of expenses</span>
             <span className="font-semibold text-card-foreground">
               {(memberBalance?.owed ?? 0).toFixed(2)} {settleCurrency}
             </span>
           </div>
-        </div>
+        </Link>
 
         <section className="mt-6">
           <h2 className="mb-3 text-lg font-semibold text-foreground">Expenses paid</h2>
