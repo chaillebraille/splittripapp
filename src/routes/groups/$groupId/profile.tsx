@@ -29,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { CurrencyPicker } from "@/components/CurrencyPicker";
 
 export const Route = createFileRoute("/groups/$groupId/profile")({
   ssr: false,
@@ -43,7 +44,6 @@ export const Route = createFileRoute("/groups/$groupId/profile")({
   component: TripProfilePage,
 });
 
-const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN"];
 
 function initialFromName(name: string) {
   const trimmed = name.trim();
@@ -402,19 +402,7 @@ function TripProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="currency">Settle currency</Label>
-            <select
-              id="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              disabled={!isOwner}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-            >
-              {COMMON_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            SELECT_PLACEHOLDER
           </div>
 
           <div className="space-y-3">

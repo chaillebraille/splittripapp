@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TripImagePicker } from "@/components/TripImagePicker";
+import { CurrencyPicker } from "@/components/CurrencyPicker";
 
 export const Route = createFileRoute("/groups/new")({
   ssr: false,
@@ -24,7 +25,6 @@ export const Route = createFileRoute("/groups/new")({
   component: NewGroupPage,
 });
 
-const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN"];
 
 function initialFromName(name: string) {
   const trimmed = name.trim();
@@ -141,18 +141,7 @@ function NewGroupPage() {
 
           <div className="space-y-2">
             <Label htmlFor="currency">Settle currency</Label>
-            <select
-              id="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring"
-            >
-              {COMMON_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            SELECT_PLACEHOLDER
             <p className="text-xs text-muted-foreground">
               All expenses will be converted to this currency for balances.
             </p>

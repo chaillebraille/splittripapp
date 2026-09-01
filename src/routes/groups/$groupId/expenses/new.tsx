@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { CurrencyPicker } from "@/components/CurrencyPicker";
 
 export const Route = createFileRoute("/groups/$groupId/expenses/new")({
   ssr: false,
@@ -25,7 +26,6 @@ export const Route = createFileRoute("/groups/$groupId/expenses/new")({
   component: NewExpensePage,
 });
 
-const COMMON_CURRENCIES = ["EUR", "USD", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN"];
 
 function NewExpensePage() {
   const { groupId } = Route.useParams();
@@ -264,21 +264,7 @@ function NewExpensePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                value={currency}
-                onChange={(e) => {
-                  setCurrencyTouched(true);
-                  setCurrency(e.target.value);
-                }}
-                className="h-10 w-full rounded-xl border border-input bg-background px-3 text-foreground outline-none focus:ring-2 focus:ring-ring"
-              >
-                {COMMON_CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              SELECT_PLACEHOLDER
             </div>
           </div>
 
