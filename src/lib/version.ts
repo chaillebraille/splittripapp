@@ -1,11 +1,15 @@
 /**
  * App version.
  *
- * Bump APP_VERSION and public/version.json together on every publish.
- * The installed app compares its baked-in APP_VERSION with the published
- * /version.json to decide whether an update is available.
+ * Single source of truth: public/version.json.
+ * The value is baked into the bundle at build time (APP_VERSION) and also
+ * served live at /version.json, so the installed app can compare the two.
+ * Bump public/version.json only — never hardcode the number here.
  */
-export const APP_VERSION = 4;
+import versionJson from "../../public/version.json";
+
+export const APP_VERSION: number = versionJson.version;
+
 
 const DECLINED_KEY = "splittrip:declined-version";
 
