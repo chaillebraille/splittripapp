@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, ShieldCheck, User, Users, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -102,7 +102,7 @@ function HomePage() {
           </DialogHeader>
           <div className="space-y-1 text-sm">
             <p className="text-foreground">
-              Installed version: <span className="font-semibold">{APP_VERSION}</span>
+              Installed version: <span className="font-semibold">{installedVersion ?? "…"}</span>
             </p>
             <p className="text-muted-foreground">
               {checking
