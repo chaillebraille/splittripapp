@@ -2,20 +2,40 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { redeemInvite } from "@/lib/sharing.functions";
+import { getInvitePreview } from "@/lib/invite.functions";
 import { syncNow } from "@/lib/local/sync";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/join/$code")({
-  ssr: false,
-  head: () => ({
-    meta: [
-      { title: "Join a trip — SplitTrip" },
-      { name: "description", content: "Accept a shared trip invitation." },
-      { property: "og:title", content: "Join a trip — SplitTrip" },
-      { property: "og:description", content: "Accept a shared trip invitation." },
-    ],
-  }),
+  loader: ({ params }) => getInvitePreview({ data: { code: params.code } }),
+  head: ({ loaderData }) => {
+    const name = loaderData?.name;
+    const title = name
+      ? `${loaderData?.role === "viewer" ? "View" : "Join"} ${name} — SplitTrip`
+      : "Join a trip — SplitTrip";
+    const description = name
+      ? `You've been invited to ${loaderData?.role === "viewer" ? "view" : "join"} the trip "${name}" in SplitTrip.`
+      : "Accept a shared trip invitation.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+      ],
+    };
+  },
+  errorComponent: () => (
+    <div className="mx-auto flex min-h-screen max-w-md items-center justify-center px-6 text-center text-muted-foreground">
+      This invite link could not be opened.
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="mx-auto flex min-h-screen max-w-md items-center justify-center px-6 text-center text-muted-foreground">
+      This invite link is no longer valid.
+    </div>
+  ),
   component: JoinPage,
 });
 

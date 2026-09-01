@@ -106,6 +106,7 @@ function EditExpensePage() {
     };
   }, [currency, group?.settle_currency]);
 
+  const canEdit = (group?.my_role ?? "owner") !== "viewer";
   const numericAmount = Number(amount) || 0;
   const numericRate = Number(exchangeRate) || 1;
   const settleAmount = numericAmount * numericRate;
@@ -244,7 +245,7 @@ function EditExpensePage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="font-display text-3xl font-bold text-foreground">Edit expense</h1>
+        <h1 className="font-display text-3xl font-bold text-foreground">{canEdit ? "Edit expense" : "Expense"}</h1>
       </header>
 
       <form onSubmit={handleSubmit} className="flex-1 px-6 pb-28">
@@ -256,6 +257,7 @@ function EditExpensePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Dinner in Rome"
+              disabled={!canEdit}
               className="rounded-xl"
               autoFocus
             />
@@ -272,6 +274,7 @@ function EditExpensePage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
+                disabled={!canEdit}
                 className="rounded-xl"
               />
             </div>
@@ -281,6 +284,7 @@ function EditExpensePage() {
                 id="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
+                disabled={!canEdit}
                 className="h-10 w-full rounded-xl border border-input bg-background px-3 text-foreground outline-none focus:ring-2 focus:ring-ring"
               >
                 {COMMON_CURRENCIES.map((c) => (
@@ -301,6 +305,7 @@ function EditExpensePage() {
               min="0"
               value={exchangeRate}
               onChange={(e) => setExchangeRate(e.target.value)}
+              disabled={!canEdit}
               className="rounded-xl"
             />
             <p className="text-xs text-muted-foreground">
@@ -316,6 +321,7 @@ function EditExpensePage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              disabled={!canEdit}
               className="rounded-xl"
             />
           </div>
@@ -326,6 +332,7 @@ function EditExpensePage() {
               id="payer"
               value={payerId}
               onChange={(e) => setPayerId(e.target.value)}
+              disabled={!canEdit}
               className="h-10 w-full rounded-xl border border-input bg-background px-3 text-foreground outline-none focus:ring-2 focus:ring-ring"
             >
               {members.map((m) => (
@@ -342,6 +349,7 @@ function EditExpensePage() {
               <div className="flex rounded-lg bg-secondary p-1">
                 <button
                   type="button"
+                  disabled={!canEdit}
                   onClick={useEqualSplit}
                   className={`rounded-md px-3 py-1 text-xs font-semibold ${
                     splitMode === "equal" ? "bg-background text-foreground shadow" : "text-muted-foreground"
@@ -351,6 +359,7 @@ function EditExpensePage() {
                 </button>
                 <button
                   type="button"
+                  disabled={!canEdit}
                   onClick={useCustomSplit}
                   className={`rounded-md px-3 py-1 text-xs font-semibold ${
                     splitMode === "custom" ? "bg-background text-foreground shadow" : "text-muted-foreground"
@@ -368,6 +377,7 @@ function EditExpensePage() {
                   <button
                     key={m.id}
                     type="button"
+                    disabled={!canEdit}
                     onClick={() => toggleMember(m.id)}
                     className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
                       selected
@@ -398,6 +408,7 @@ function EditExpensePage() {
                               setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
                             }
                             placeholder="0.00"
+                            disabled={!canEdit}
                             className="h-8 w-24 rounded-lg text-right"
                           />
                         ) : (
@@ -441,6 +452,7 @@ function EditExpensePage() {
           </div>
         </div>
 
+        {canEdit && (
         <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 p-4 backdrop-blur-sm">
           <div className="mx-auto max-w-md">
             <Button
@@ -452,6 +464,7 @@ function EditExpensePage() {
             </Button>
           </div>
         </div>
+        )}
       </form>
     </div>
   );

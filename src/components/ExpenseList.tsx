@@ -102,19 +102,13 @@ export function ExpenseList({
               key={expense.id}
               className="flex items-center gap-2 rounded-2xl bg-card p-4 shadow-sm"
             >
-              {canEdit ? (
-                <Link
-                  to="/groups/$groupId/expenses/$expenseId/edit"
-                  params={{ groupId, expenseId: expense.id }}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3"
-                >
-                  <ExpenseRow expense={expense} payer={payer} settleCurrency={settleCurrency} shareAmounts={shareAmounts} />
-                </Link>
-              ) : (
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                  <ExpenseRow expense={expense} payer={payer} settleCurrency={settleCurrency} shareAmounts={shareAmounts} />
-                </div>
-              )}
+              <Link
+                to="/groups/$groupId/expenses/$expenseId/edit"
+                params={{ groupId, expenseId: expense.id }}
+                className="flex min-w-0 flex-1 items-center justify-between gap-3"
+              >
+                <ExpenseRow expense={expense} payer={payer} settleCurrency={settleCurrency} shareAmounts={shareAmounts} />
+              </Link>
               {canEdit && (
                 <button
                   type="button"

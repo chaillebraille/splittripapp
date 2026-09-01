@@ -115,3 +115,17 @@ export const redeemInvite = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { groupId: groupId as string };
   });
+
+/** Leaves a trip that was shared with me. Reversible: the same invite link re-adds me. */
+export const leaveTrip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { group_id: string }) => ({ group_id: String(data.group_id) }))
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("group_shares")
+      .delete()
+      .eq("group_id", data.group_id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { success: true as const };
+  });

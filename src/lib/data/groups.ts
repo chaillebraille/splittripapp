@@ -72,3 +72,19 @@ export async function deleteGroup({ data }: { data: { id: string } }) {
   requestSync();
   return { success: true };
 }
+
+/** Drops a shared trip from this device without asking the cloud to delete it. */
+export async function forgetGroup({ data }: { data: { id: string } }) {
+  await ready();
+  setState((s) => {
+    const expenseIds = s.expenses.filter((e) => e.group_id === data.id).map((e) => e.id);
+    return {
+      ...s,
+      groups: s.groups.filter((g) => g.id !== data.id),
+      members: s.members.filter((m) => m.group_id !== data.id),
+      expenses: s.expenses.filter((e) => e.group_id !== data.id),
+      splits: s.splits.filter((sp) => !expenseIds.includes(sp.expense_id)),
+    };
+  });
+  return { success: true };
+}

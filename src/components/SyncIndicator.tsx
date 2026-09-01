@@ -6,6 +6,13 @@ import { useAuth } from "@/lib/auth-provider";
 import { getStatus, setSyncEnabled, subscribeStatus, syncNow } from "@/lib/local/sync";
 import { ready } from "@/lib/local/store";
 import { refreshRates } from "@/lib/data/rates";
+import {
+  APP_VERSION,
+  applyAppUpdate,
+  fetchPublishedVersion,
+  getDeclinedVersion,
+  setDeclinedVersion,
+} from "@/lib/version";
 
 const MANUAL_SYNC_COOLDOWN_MS = 10_000;
 
@@ -42,10 +49,22 @@ export function SyncIndicator() {
     if (!userId) return;
     setSyncEnabled(true);
 
+    async function checkForUpdate() {
+      const published = await fetchPublishedVersion();
+      if (published === null || published <= APP_VERSION) return;
+      if (published <= getDeclinedVersion()) return;
+      toast("A newer version of SplitTrip is available", {
+        duration: Infinity,
+        action: { label: "Update", onClick: () => void applyAppUpdate() },
+        cancel: { label: "Not now", onClick: () => setDeclinedVersion(published) },
+      });
+    }
+
     async function run() {
       const changed = await syncNow();
       if (changed) queryClient.invalidateQueries();
       void refreshRates();
+      void checkForUpdate();
     }
 
     void run();
