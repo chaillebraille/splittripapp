@@ -141,7 +141,7 @@ function NewGroupPage() {
 
           <div className="space-y-2">
             <Label htmlFor="currency">Settle currency</Label>
-            SELECT_PLACEHOLDER
+            <CurrencyPicker id="currency" value={currency} onChange={setCurrency} className="py-2.5" title="Settle currency" />
             <p className="text-xs text-muted-foreground">
               All expenses will be converted to this currency for balances.
             </p>

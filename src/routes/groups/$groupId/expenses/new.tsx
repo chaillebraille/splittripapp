@@ -264,7 +264,7 @@ function NewExpensePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              SELECT_PLACEHOLDER
+              <CurrencyPicker id="currency" value={currency} onChange={(c) => { setCurrencyTouched(true); setCurrency(c); }} title="Expense currency" />
             </div>
           </div>
 

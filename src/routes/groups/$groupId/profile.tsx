@@ -402,7 +402,7 @@ function TripProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="currency">Settle currency</Label>
-            SELECT_PLACEHOLDER
+            <CurrencyPicker id="currency" value={currency} onChange={setCurrency} disabled={!isOwner} className="py-2.5" title="Settle currency" />
           </div>
 
           <div className="space-y-3">

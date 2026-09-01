@@ -280,7 +280,7 @@ function EditExpensePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              SELECT_PLACEHOLDER
+              <CurrencyPicker id="currency" value={currency} onChange={setCurrency} disabled={!canEdit} title="Expense currency" />
             </div>
           </div>
 
