@@ -179,17 +179,6 @@ function UserProfilePage() {
             </AlertDialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password">Current password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="rounded-xl"
-                  autoComplete="current-password"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="profile-new-password">New password</Label>
                 <div className="flex gap-2">
                   <Input
