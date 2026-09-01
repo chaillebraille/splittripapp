@@ -34,14 +34,12 @@ export async function createGroup({
 export async function updateGroup({
   data,
 }: {
-  data: { id: string; name?: string; settle_currency?: string; image_url?: string | null };
+  data: { id: string; name?: string; image_url?: string | null };
 }): Promise<Group> {
   await ready();
+  // Settle currency is immutable after trip creation (race-condition guard).
   const patch = {
     ...(data.name !== undefined ? { name: data.name.trim() } : {}),
-    ...(data.settle_currency !== undefined
-      ? { settle_currency: data.settle_currency.toUpperCase() }
-      : {}),
     ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
   };
   const next = setState((s) =>
