@@ -150,21 +150,44 @@ function SharingSection({ groupId }: { groupId: string }) {
               >
                 <Copy className="h-4 w-4" />
               </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void revokeInvite({ data: { inviteId: invite.id } })
-                    .then(refresh)
-                    .then(() => toast.success("Link revoked"))
-                    .catch((err) =>
-                      toast.error(err instanceof Error ? err.message : "Could not revoke the link"),
-                    )
-                }
-                aria-label="Revoke invite link"
-                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Revoke invite link"
+                    className="rounded-full p-1.5 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Revoke link?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will revoke that link so that it will no longer be possible to use it to
+                      join this trip as a {invite.role === "editor" ? "editor" : "viewer"}.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        void revokeInvite({ data: { inviteId: invite.id } })
+                          .then(refresh)
+                          .then(() => toast.success("Link revoked"))
+                          .catch((err) =>
+                            toast.error(
+                              err instanceof Error ? err.message : "Could not revoke the link",
+                            ),
+                          )
+                      }
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Revoke link
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))}
         </div>
