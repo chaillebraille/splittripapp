@@ -166,6 +166,33 @@ export const adminSetUserDisabled = createServerFn({ method: "POST" })
     return { success: true as const };
   });
 
+export const adminSetUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ userId: z.string().uuid(), makeAdmin: z.boolean() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId && !data.makeAdmin) {
+      return { success: false as const, error: "You can't revoke your own admin rights" };
+    }
+    const admin = await loadAdmin();
+    if (data.makeAdmin) {
+      const { error } = await admin
+        .from("user_roles")
+        .upsert({ user_id: data.userId, role: "admin" }, { onConflict: "user_id,role" });
+      if (error) return { success: false as const, error: error.message };
+    } else {
+      const { error } = await admin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("role", "admin");
+      if (error) return { success: false as const, error: error.message };
+    }
+    return { success: true as const };
+  });
+
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
@@ -179,3 +206,4 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     if (error) return { success: false as const, error: error.message };
     return { success: true as const };
   });
+
