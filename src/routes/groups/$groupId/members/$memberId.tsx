@@ -105,7 +105,11 @@ function MemberPage() {
 
       <main className="flex-1 px-6 pb-12">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-card p-4 shadow-sm">
+          <Link
+            to="/groups/$groupId/settle"
+            params={{ groupId }}
+            className="block rounded-2xl bg-card p-4 shadow-sm transition-transform active:scale-[0.98]"
+          >
             <p className="text-xs font-medium text-muted-foreground">Total paid</p>
             <p className="mt-1 font-display text-2xl font-bold text-foreground">
               {totalPaid.toFixed(2)}
