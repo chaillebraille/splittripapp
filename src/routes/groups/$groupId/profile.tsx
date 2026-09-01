@@ -102,7 +102,7 @@ function SharingSection({ groupId }: { groupId: string }) {
       <Label>Sharing</Label>
       <p className="text-xs text-muted-foreground">
         Share a link to let others see this trip. People with a view link can only look; people
-        with an edit link can add and change expenses and the trip photo.
+         with an edit link can add and change expenses.
       </p>
 
       <div className="flex gap-2">
