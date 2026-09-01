@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Plus } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { getGroup } from "@/lib/data/groups";
@@ -60,6 +60,7 @@ function EditExpensePage() {
   const [splitMode, setSplitMode] = useState<"equal" | "custom">("equal");
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!expense) return;
@@ -107,6 +108,7 @@ function EditExpensePage() {
   }, [currency, group?.settle_currency]);
 
   const canEdit = (group?.my_role ?? "owner") !== "viewer";
+  const editable = canEdit && editing;
   const numericAmount = Number(amount) || 0;
   const numericRate = Number(exchangeRate) || 1;
   const settleAmount = numericAmount * numericRate;
@@ -222,8 +224,9 @@ function EditExpensePage() {
       });
       queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
       queryClient.invalidateQueries({ queryKey: ["balances", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["expense", expenseId] });
       toast.success("Expense updated");
-      navigate({ to: "/groups/$groupId", params: { groupId } });
+      setEditing(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update expense");
     } finally {
@@ -248,7 +251,18 @@ function EditExpensePage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="font-display text-3xl font-bold text-foreground">{canEdit ? "Edit expense" : "Expense"}</h1>
+        {canEdit && !editing && (
+          <button
+            onClick={() => setEditing(true)}
+            aria-label="Edit expense"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+          >
+            <Pencil className="h-5 w-5" />
+          </button>
+        )}
+        <h1 className="font-display text-3xl font-bold text-foreground">
+          {editing && canEdit ? "Edit expense" : "View expense"}
+        </h1>
       </header>
 
       <form onSubmit={handleSubmit} className="flex-1 px-6 pb-28">
