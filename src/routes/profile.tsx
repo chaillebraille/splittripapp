@@ -40,13 +40,11 @@ function UserProfilePage() {
   const [memberName, setMemberName] = useState(() => readCachedMemberName(userId) ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   function openPasswordDialog(open: boolean) {
     setPwOpen(open);
     if (open) {
-      setCurrentPassword("");
       setNewPassword(generatePassword());
     }
   }
