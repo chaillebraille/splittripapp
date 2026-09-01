@@ -387,7 +387,7 @@ function TripProfilePage() {
     try {
       await update({
         data: isOwner
-          ? { id: groupId, name: name.trim(), settle_currency: currency, image_url: imageUrl }
+          ? { id: groupId, name: name.trim(), image_url: imageUrl }
           : { id: groupId, image_url: imageUrl },
       });
       await queryClient.invalidateQueries({ queryKey: ["group", groupId] });
@@ -448,7 +448,10 @@ function TripProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="currency">Settle currency</Label>
-            <CurrencyPicker id="currency" value={currency} onChange={setCurrency} disabled={!isOwner} className="py-2.5" title="Settle currency" />
+            <CurrencyPicker id="currency" value={currency} onChange={setCurrency} disabled className="py-2.5" title="Settle currency" />
+            <p className="text-xs text-muted-foreground">
+              The settle currency is fixed once the trip is created and cannot be changed.
+            </p>
           </div>
 
           <div className="space-y-3">
