@@ -104,13 +104,14 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       .object({
         username: z.string().transform((v) => parseUsername(v)),
         password: z.string().min(12),
+        makeAdmin: z.boolean().optional(),
       })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const admin = await loadAdmin();
-    const { error } = await admin.auth.admin.createUser({
+    const { data: created, error } = await admin.auth.admin.createUser({
       email: usernameToEmail(data.username),
       password: data.password,
       email_confirm: true,
@@ -120,6 +121,12 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       throw new Error(
         /already/i.test(error.message) ? "That username is taken" : error.message,
       );
+    }
+    if (data.makeAdmin && created.user) {
+      const { error: roleError } = await admin
+        .from("user_roles")
+        .insert({ user_id: created.user.id, role: "admin" });
+      if (roleError) throw new Error(roleError.message);
     }
     return { success: true };
   });

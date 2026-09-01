@@ -42,6 +42,7 @@ import { generatePassword, validatePassword } from "@/lib/password";
 import { validateUsername } from "@/lib/username";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
@@ -71,6 +72,7 @@ function AdminPage() {
 
   const [username, setUsername] = useState("");
   const [newPassword, setNewPassword] = useState(() => generatePassword());
+  const [makeAdmin, setMakeAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
   const [resetPassword, setResetPassword] = useState("");
@@ -130,10 +132,13 @@ function AdminPage() {
     }
     setIsBusy(true);
     try {
-      await adminCreateUser({ data: { username: username.trim(), password: newPassword } });
+      await adminCreateUser({
+        data: { username: username.trim(), password: newPassword, makeAdmin },
+      });
       toast.success("Account created");
       setUsername("");
       setNewPassword(generatePassword());
+      setMakeAdmin(false);
       await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create the user");
@@ -253,6 +258,16 @@ function AdminPage() {
             <p className="text-xs text-muted-foreground">
               Suggested password — you can replace it (min. 12 characters, mixed types).
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="new-admin"
+              checked={makeAdmin}
+              onCheckedChange={(checked) => setMakeAdmin(checked === true)}
+            />
+            <Label htmlFor="new-admin" className="font-normal">
+              Make this user an admin
+            </Label>
           </div>
           <Button
             type="submit"
