@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { redeemInvite } from "@/lib/sharing.functions";
+import { getInvitePreview } from "@/lib/invite.functions";
 import { syncNow } from "@/lib/local/sync";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
