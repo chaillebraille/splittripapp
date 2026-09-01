@@ -71,6 +71,7 @@ function AdminPage() {
 
   const [username, setUsername] = useState("");
   const [newPassword, setNewPassword] = useState(() => generatePassword());
+  const [makeAdmin, setMakeAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
   const [resetPassword, setResetPassword] = useState("");
