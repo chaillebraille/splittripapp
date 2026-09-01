@@ -66,13 +66,13 @@ export const updateGroup = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         name: z.string().min(1).max(100).optional(),
-        settle_currency: z.string().min(1).max(3).optional(),
         image_url: z.string().max(400000).nullable().optional(),
       })
       .parse(data)
   )
   .handler(async ({ context, data }) => {
-    // Editors may only change the trip photo; everything else is owner-only.
+    // Settle currency is immutable after creation. Editors may only change the
+    // trip photo; everything else is owner-only.
     const { data: existing, error: lookupError } = await context.supabase
       .from("groups")
       .select("created_by")
@@ -80,15 +80,14 @@ export const updateGroup = createServerFn({ method: "POST" })
       .single();
     if (lookupError) throw new Error(lookupError.message);
     const isOwner = existing.created_by === context.userId;
-    if (!isOwner && (data.name !== undefined || data.settle_currency !== undefined)) {
-      throw new Error("Only the trip owner can change the name or settle currency");
+    if (!isOwner && data.name !== undefined) {
+      throw new Error("Only the trip owner can change the name");
     }
 
     const { data: group, error } = await context.supabase
       .from("groups")
       .update({
         ...(data.name ? { name: data.name } : {}),
-        ...(data.settle_currency ? { settle_currency: data.settle_currency.toUpperCase() } : {}),
         ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
       })
       .eq("id", data.id)
