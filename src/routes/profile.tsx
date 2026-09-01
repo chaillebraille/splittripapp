@@ -166,7 +166,73 @@ function UserProfilePage() {
         >
           Save profile
         </Button>
+
+        <AlertDialog open={pwOpen} onOpenChange={openPasswordDialog}>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="outline" className="w-full rounded-xl py-6 text-base">
+              <KeyRound className="mr-2 h-4 w-4" />
+              Change password
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Create a new password?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your current password stops working immediately. The new password is shown to you
+                once — write it down.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="rounded-xl"
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-new-password">New password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="profile-new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="rounded-xl font-mono"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Generate another password"
+                    className="shrink-0 rounded-xl"
+                    onClick={() => setNewPassword(generatePassword())}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleChangePassword();
+                }}
+              >
+                Create new password
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </form>
+
     </div>
   );
 }
