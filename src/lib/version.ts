@@ -5,7 +5,7 @@
  * The installed app compares its baked-in APP_VERSION with the published
  * /version.json to decide whether an update is available.
  */
-export const APP_VERSION = 1;
+export const APP_VERSION = 2;
 
 const DECLINED_KEY = "splittrip:declined-version";
 
