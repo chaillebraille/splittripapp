@@ -1,17 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  ChevronRight,
   Copy,
-  KeyRound,
   Plus,
   RefreshCw,
   Share2,
   ShieldCheck,
-  Trash2,
-  UserX,
-  UserCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -20,24 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-provider";
-import {
-  adminCreateUser,
-  adminDeleteUser,
-  adminResetPassword,
-  adminSetUserDisabled,
-  listUsers,
-} from "@/lib/admin.functions";
+import { adminCreateUser, listUsers } from "@/lib/admin.functions";
 import { generatePassword, validatePassword } from "@/lib/password";
 import { validateUsername } from "@/lib/username";
 import { Button } from "@/components/ui/button";
@@ -62,7 +43,7 @@ export const Route = createFileRoute("/admin/")({
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isReady, isAdmin, userId } = useAuth();
+  const { isReady, isAdmin } = useAuth();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -74,30 +55,25 @@ function AdminPage() {
   const [newPassword, setNewPassword] = useState(() => generatePassword());
   const [makeAdmin, setMakeAdmin] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [resetTarget, setResetTarget] = useState<{ id: string; label: string } | null>(null);
-  const [resetPassword, setResetPassword] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
-  const [shareTarget, setShareTarget] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [shareQr, setShareQr] = useState<string | null>(null);
-  const shareUrl = window.location.origin;
+  const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
-    if (shareTarget === null) {
+    if (!shareOpen) {
       setShareQr(null);
       return;
     }
     let cancelled = false;
     void import("qrcode")
-      .then((QRCode) =>
-        QRCode.toDataURL(shareUrl, { width: 320, margin: 2 }),
-      )
+      .then((QRCode) => QRCode.toDataURL(shareUrl, { width: 320, margin: 2 }))
       .then((url) => {
         if (!cancelled) setShareQr(url);
       });
     return () => {
       cancelled = true;
     };
-  }, [shareTarget, shareUrl]);
+  }, [shareOpen, shareUrl]);
 
   async function handleCopyShare() {
     try {
@@ -111,7 +87,6 @@ function AdminPage() {
   const sortedUsers = [...users].sort((a, b) =>
     (a?.username ?? "").localeCompare(b?.username ?? "", undefined, { sensitivity: "base" }),
   );
-
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -144,45 +119,6 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "Could not create the user");
     } finally {
       setIsBusy(false);
-    }
-  }
-
-  async function handleDeleteUser(targetId: string, label: string) {
-    try {
-      const result = await adminDeleteUser({ data: { userId: targetId } });
-      if (!result.success) {
-        toast.error(result.error ?? "Could not delete the account");
-        return;
-      }
-      toast.success(`${label} deleted`);
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not delete the account");
-    }
-  }
-
-  async function handleResetPassword(targetId: string, label: string, password: string) {
-    try {
-      await adminResetPassword({ data: { userId: targetId, password } });
-      toast.success(`New password created for ${label}.`, { duration: 20000 });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not reset the password");
-    }
-  }
-
-  async function handleToggleDisabled(targetId: string, disabled: boolean) {
-    try {
-      const result = await adminSetUserDisabled({
-        data: { userId: targetId, disabled: !disabled },
-      });
-      if (!result.success) {
-        toast.error(result.error ?? "Could not update the account");
-        return;
-      }
-      toast.success(!disabled ? "Account disabled" : "Account re-enabled");
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not update the account");
     }
   }
 
@@ -279,93 +215,56 @@ function AdminPage() {
           </Button>
         </form>
 
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full rounded-xl"
+          onClick={() => setShareOpen(true)}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Share application
+        </Button>
+
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-foreground">All users</h2>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
             sortedUsers.map((user) => (
-              <div key={user.id} className="rounded-2xl bg-card p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 truncate font-medium text-card-foreground">
-                      <span className="truncate">{user.username}</span>
-                      {user.is_admin && <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Admin" />}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
-                      {user.last_sign_in_at
-                        ? ` · last seen ${new Date(user.last_sign_in_at).toLocaleDateString()}`
-                        : " · never signed in"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Share app link for ${user.username}`}
-                      onClick={() => setShareTarget(user.username)}
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Reset password for ${user.username}`}
-                      onClick={() => {
-                        setResetPassword(generatePassword());
-                        setResetTarget({ id: user.id, label: user.username });
-                      }}
-                    >
-                      <KeyRound className="h-4 w-4" />
-                    </Button>
-                    {user.id !== userId && (
-                      <>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={
-                            user.disabled
-                              ? `Re-enable ${user.username}`
-                              : `Disable ${user.username}`
-                          }
-                          onClick={() => void handleToggleDisabled(user.id, user.disabled)}
-                        >
-                          {user.disabled ? (
-                            <UserCheck className="h-4 w-4" />
-                          ) : (
-                            <UserX className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Delete ${user.username}`}
-                          onClick={() => setDeleteTarget({ id: user.id, label: user.username })}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
+              <Link
+                key={user.id}
+                to="/admin/$userId"
+                params={{ userId: user.id }}
+                className="flex items-center justify-between gap-2 rounded-2xl bg-card p-4 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 truncate font-medium text-card-foreground">
+                    <span className="truncate">{user.username}</span>
+                    {user.is_admin && (
+                      <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Admin" />
                     )}
-                  </div>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
+                    {user.last_sign_in_at
+                      ? ` · last seen ${new Date(user.last_sign_in_at).toLocaleDateString()}`
+                      : " · never signed in"}
+                  </p>
                 </div>
-              </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </Link>
             ))
           )}
         </section>
       </main>
 
-      <Dialog open={shareTarget !== null} onOpenChange={(open) => !open && setShareTarget(null)}>
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Share app with {shareTarget}</DialogTitle>
+            <DialogTitle>Share application</DialogTitle>
             <DialogDescription>
-              Send this link to {shareTarget}, or let them scan the QR code from your screen. They
-              sign in with their username and the password you set.
+              Send this link, or let someone scan the QR code from your screen. They sign in with
+              their username and the password you set.
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
@@ -385,7 +284,7 @@ function AdminPage() {
             {shareQr ? (
               <img
                 src={shareQr}
-                alt={`QR code linking to the SplitTrip sign-in page`}
+                alt="QR code linking to the SplitTrip sign-in page"
                 className="h-56 w-56 rounded-xl border border-border"
               />
             ) : (
@@ -396,89 +295,6 @@ function AdminPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={resetTarget !== null}
-        onOpenChange={(open) => !open && setResetTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Create a new password?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {resetTarget?.label}'s current password stops working immediately. The new password is
-              shown to you once — pass it on.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="reset-password">New password</Label>
-            <div className="flex gap-2">
-              <Input
-                id="reset-password"
-                value={resetPassword}
-                onChange={(e) => setResetPassword(e.target.value)}
-                className="rounded-xl font-mono"
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Generate another password"
-                className="shrink-0 rounded-xl"
-                onClick={() => setResetPassword(generatePassword())}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                const pwError = validatePassword(resetPassword);
-                if (pwError) {
-                  e.preventDefault();
-                  toast.error(pwError);
-                  return;
-                }
-                if (resetTarget)
-                  void handleResetPassword(resetTarget.id, resetTarget.label, resetPassword);
-                setResetTarget(null);
-              }}
-            >
-              Create password
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteTarget?.label}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the account and every trip it owns, including those trips'
-              members and expenses. This can't be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteTarget) void handleDeleteUser(deleteTarget.id, deleteTarget.label);
-                setDeleteTarget(null);
-              }}
-            >
-              Delete account
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
