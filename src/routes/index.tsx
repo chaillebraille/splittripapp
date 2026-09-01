@@ -180,10 +180,8 @@ function HomePage() {
           >
             <Plus className="h-6 w-6" />
           </Link>
-          <span className="flex flex-col items-center gap-1 text-sm font-medium text-muted-foreground">
-            <Users className="h-6 w-6" />
-            More
-          </span>
+          <span className="w-12" aria-hidden="true" />
+
         </div>
       </div>
     </div>
