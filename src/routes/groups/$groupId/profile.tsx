@@ -224,21 +224,44 @@ function SharingSection({ groupId }: { groupId: string }) {
                 <option value="viewer">View</option>
                 <option value="editor">Edit</option>
               </select>
-              <button
-                type="button"
-                onClick={() =>
-                  void removeShare({ data: { shareId: share.id } })
-                    .then(refresh)
-                    .then(() => toast.success("Access removed"))
-                    .catch((err) =>
-                      toast.error(err instanceof Error ? err.message : "Could not remove access"),
-                    )
-                }
-                aria-label={`Remove access for ${share.label}`}
-                className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Remove access for ${share.label}`}
+                    className="rounded-full p-1.5 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove user?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {share.label} will be removed from the list of sharing users and will be
+                      required to use a valid share link to rejoin.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        void removeShare({ data: { shareId: share.id } })
+                          .then(refresh)
+                          .then(() => toast.success("Access removed"))
+                          .catch((err) =>
+                            toast.error(
+                              err instanceof Error ? err.message : "Could not remove access",
+                            ),
+                          )
+                      }
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Remove user
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))}
         </div>
