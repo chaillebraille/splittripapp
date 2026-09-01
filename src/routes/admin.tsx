@@ -131,10 +131,13 @@ function AdminPage() {
     }
     setIsBusy(true);
     try {
-      await adminCreateUser({ data: { username: username.trim(), password: newPassword } });
+      await adminCreateUser({
+        data: { username: username.trim(), password: newPassword, makeAdmin },
+      });
       toast.success("Account created");
       setUsername("");
       setNewPassword(generatePassword());
+      setMakeAdmin(false);
       await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create the user");
@@ -254,6 +257,16 @@ function AdminPage() {
             <p className="text-xs text-muted-foreground">
               Suggested password — you can replace it (min. 12 characters, mixed types).
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="new-admin"
+              checked={makeAdmin}
+              onCheckedChange={(checked) => setMakeAdmin(checked === true)}
+            />
+            <Label htmlFor="new-admin" className="font-normal">
+              Make this user an admin
+            </Label>
           </div>
           <Button
             type="submit"
