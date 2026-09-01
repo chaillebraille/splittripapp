@@ -1,0 +1,300 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Copy,
+  Plus,
+  RefreshCw,
+  Share2,
+  ShieldCheck,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/lib/auth-provider";
+import { adminCreateUser, listUsers } from "@/lib/admin.functions";
+import { generatePassword, validatePassword } from "@/lib/password";
+import { validateUsername } from "@/lib/username";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/admin/")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "User admin — SplitTrip" },
+      { name: "description", content: "Manage SplitTrip user accounts." },
+      { property: "og:title", content: "User admin — SplitTrip" },
+      { property: "og:description", content: "Manage SplitTrip user accounts." },
+    ],
+  }),
+  component: AdminPage,
+});
+
+function AdminPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isReady, isAdmin } = useAuth();
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: () => listUsers(),
+    enabled: isReady && isAdmin,
+  });
+
+  const [username, setUsername] = useState("");
+  const [newPassword, setNewPassword] = useState(() => generatePassword());
+  const [makeAdmin, setMakeAdmin] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareQr, setShareQr] = useState<string | null>(null);
+  const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
+
+  useEffect(() => {
+    if (!shareOpen) {
+      setShareQr(null);
+      return;
+    }
+    let cancelled = false;
+    void import("qrcode")
+      .then((QRCode) => QRCode.toDataURL(shareUrl, { width: 320, margin: 2 }))
+      .then((url) => {
+        if (!cancelled) setShareQr(url);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareOpen, shareUrl]);
+
+  async function handleCopyShare() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied — send it to the user");
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+  const sortedUsers = [...users].sort((a, b) =>
+    (a?.username ?? "").localeCompare(b?.username ?? "", undefined, { sensitivity: "base" }),
+  );
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (isBusy) return;
+    const nameError = validateUsername(username);
+    if (nameError) {
+      toast.error(nameError);
+      return;
+    }
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
+    setIsBusy(true);
+    try {
+      await adminCreateUser({
+        data: { username: username.trim(), password: newPassword, makeAdmin },
+      });
+      toast.success("Account created");
+      setUsername("");
+      setNewPassword(generatePassword());
+      setMakeAdmin(false);
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create the user");
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  if (isReady && !isAdmin) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <h1 className="font-display text-2xl font-bold text-foreground">Admins only</h1>
+        <p className="text-sm text-muted-foreground">This page manages user accounts.</p>
+        <Button
+          onClick={() => navigate({ to: "/" })}
+          className="rounded-xl bg-primary px-6 text-primary-foreground"
+        >
+          Back to my trips
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
+      <header className="flex items-center gap-3 px-6 pt-8 pb-4">
+        <button
+          onClick={() => navigate({ to: "/" })}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="font-display text-3xl font-bold text-foreground">Users</h1>
+      </header>
+
+      <main className="flex-1 space-y-6 px-6 pb-12">
+        <form onSubmit={handleCreate} className="space-y-3 rounded-2xl bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-card-foreground">New user</h2>
+          <div className="space-y-2">
+            <Label htmlFor="new-username">Username</Label>
+            <Input
+              id="new-username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value.replace(/\s+/gu, ""))}
+              placeholder="e.g. alex.k"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              One word — letters, digits, period, underscore or hyphen. No spaces.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Password</Label>
+            <div className="flex gap-2">
+              <Input
+                id="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="rounded-xl font-mono"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Generate another password"
+                className="shrink-0 rounded-xl"
+                onClick={() => setNewPassword(generatePassword())}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Suggested password — you can replace it (min. 12 characters, mixed types).
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="new-admin"
+              checked={makeAdmin}
+              onCheckedChange={(checked) => setMakeAdmin(checked === true)}
+            />
+            <Label htmlFor="new-admin" className="font-normal">
+              Make this user an admin
+            </Label>
+          </div>
+          <Button
+            type="submit"
+            disabled={isBusy || !username.trim()}
+            className="w-full rounded-xl bg-primary text-primary-foreground"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create account
+          </Button>
+        </form>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full rounded-xl"
+          onClick={() => setShareOpen(true)}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Share application
+        </Button>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">All users</h2>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            sortedUsers.map((user) => (
+              <Link
+                key={user.id}
+                to="/admin/$userId"
+                params={{ userId: user.id }}
+                className="flex items-center justify-between gap-2 rounded-2xl bg-card p-4 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 truncate font-medium text-card-foreground">
+                    <span className="truncate">{user.username}</span>
+                    {user.is_admin && (
+                      <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Admin" />
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {user.is_admin ? "Admin" : "Member"} · {user.disabled ? "Disabled" : "Active"}
+                    {user.last_sign_in_at
+                      ? ` · last seen ${new Date(user.last_sign_in_at).toLocaleDateString()}`
+                      : " · never signed in"}
+                  </p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </Link>
+            ))
+          )}
+        </section>
+      </main>
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share application</DialogTitle>
+            <DialogDescription>
+              Send this link, or let someone scan the QR code from your screen. They sign in with
+              their username and the password you set.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input readOnly value={shareUrl} className="rounded-xl font-mono text-xs" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Copy app link"
+              className="shrink-0 rounded-xl"
+              onClick={() => void handleCopyShare()}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex justify-center pt-2">
+            {shareQr ? (
+              <img
+                src={shareQr}
+                alt="QR code linking to the SplitTrip sign-in page"
+                className="h-56 w-56 rounded-xl border border-border"
+              />
+            ) : (
+              <div className="flex h-56 w-56 items-center justify-center rounded-xl border border-border text-sm text-muted-foreground">
+                Generating…
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
