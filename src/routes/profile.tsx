@@ -40,13 +40,11 @@ function UserProfilePage() {
   const [memberName, setMemberName] = useState(() => readCachedMemberName(userId) ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   function openPasswordDialog(open: boolean) {
     setPwOpen(open);
     if (open) {
-      setCurrentPassword("");
       setNewPassword(generatePassword());
     }
   }
@@ -57,10 +55,7 @@ function UserProfilePage() {
       toast.error(pwError);
       return;
     }
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-      ...(currentPassword ? { current_password: currentPassword } : {}),
-    } as Parameters<typeof supabase.auth.updateUser>[0]);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       toast.error(error.message);
       return;
@@ -183,17 +178,6 @@ function UserProfilePage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="rounded-xl"
-                  autoComplete="current-password"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-new-password">New password</Label>
                 <div className="flex gap-2">
