@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, KeyRound, LogOut, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-provider";
+import { supabase } from "@/integrations/supabase/client";
+import { generatePassword, validatePassword } from "@/lib/password";
 import { loadMemberName, readCachedMemberName, saveMemberName } from "@/lib/data/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,36 @@ function UserProfilePage() {
   const { userId, displayName, signOut } = useAuth();
   const [memberName, setMemberName] = useState(() => readCachedMemberName(userId) ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  function openPasswordDialog(open: boolean) {
+    setPwOpen(open);
+    if (open) {
+      setCurrentPassword("");
+      setNewPassword(generatePassword());
+    }
+  }
+
+  async function handleChangePassword() {
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      toast.error(pwError);
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+      ...(currentPassword ? { current_password: currentPassword } : {}),
+    } as Parameters<typeof supabase.auth.updateUser>[0]);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPwOpen(false);
+    toast.success("New password created.", { duration: 20000 });
+  }
+
 
   useEffect(() => {
     let cancelled = false;
@@ -134,7 +166,73 @@ function UserProfilePage() {
         >
           Save profile
         </Button>
+
+        <AlertDialog open={pwOpen} onOpenChange={openPasswordDialog}>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="outline" className="w-full rounded-xl py-6 text-base">
+              <KeyRound className="mr-2 h-4 w-4" />
+              Change password
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Create a new password?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your current password stops working immediately. The new password is shown to you
+                once — write it down.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="rounded-xl"
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-new-password">New password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="profile-new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="rounded-xl font-mono"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Generate another password"
+                    className="shrink-0 rounded-xl"
+                    onClick={() => setNewPassword(generatePassword())}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleChangePassword();
+                }}
+              >
+                Create new password
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </form>
+
     </div>
   );
 }
