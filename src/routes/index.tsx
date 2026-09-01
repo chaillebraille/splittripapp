@@ -39,6 +39,14 @@ function HomePage() {
     queryFn: fetchGroups,
   });
 
+  // The SSR pass always runs the server's current code, so reading APP_VERSION
+  // during render can report a newer number than the bundle actually installed
+  // on the device. Read it after hydration, from the running client bundle.
+  const [installedVersion, setInstalledVersion] = useState<number | null>(null);
+  useEffect(() => {
+    setInstalledVersion(APP_VERSION);
+  }, []);
+
   async function openVersionDialog() {
     setVersionOpen(true);
     setChecking(true);
@@ -47,7 +55,9 @@ function HomePage() {
     setChecking(false);
   }
 
-  const updateAvailable = latestVersion !== null && latestVersion > APP_VERSION;
+  const updateAvailable =
+    latestVersion !== null && installedVersion !== null && latestVersion > installedVersion;
+
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
