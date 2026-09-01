@@ -42,6 +42,7 @@ import { generatePassword, validatePassword } from "@/lib/password";
 import { validateUsername } from "@/lib/username";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
