@@ -77,7 +77,7 @@ function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
   const [shareTarget, setShareTarget] = useState<string | null>(null);
   const [shareQr, setShareQr] = useState<string | null>(null);
-  const shareUrl = `${window.location.origin}/auth`;
+  const shareUrl = window.location.origin;
 
   useEffect(() => {
     if (shareTarget === null) {
