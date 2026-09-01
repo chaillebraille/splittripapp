@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, KeyRound, LogOut, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-provider";
+import { supabase } from "@/integrations/supabase/client";
+import { generatePassword, validatePassword } from "@/lib/password";
 import { loadMemberName, readCachedMemberName, saveMemberName } from "@/lib/data/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
