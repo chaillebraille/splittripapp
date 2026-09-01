@@ -1,19 +1,19 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, Plus, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Plus, ShieldCheck, User, Users, Wallet } from "lucide-react";
 import { useState } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { listGroups } from "@/lib/data/groups";
 import { useAuth } from "@/lib/auth-provider";
+import { APP_VERSION, applyAppUpdate, fetchPublishedVersion } from "@/lib/version";
 
 export const Route = createFileRoute("/")({
   ssr: false,
