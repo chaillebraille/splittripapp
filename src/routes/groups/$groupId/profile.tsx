@@ -477,6 +477,44 @@ function TripProfilePage() {
 
           {isOwner && <SharingSection groupId={groupId} />}
 
+          {!isOwner && (
+            <div className="space-y-2 border-t border-border pt-6">
+              <Label className="text-destructive">Danger zone</Label>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLeaving}
+                    className="w-full rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove trip
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove this trip?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {group?.name ? `"${group.name}"` : "This trip"} will be removed from your
+                      device and you'll lose access to it. The trip itself is not deleted — opening
+                      the invite link again restores your access.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => void handleLeaveTrip()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Remove trip
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
           {isOwner && (
             <div className="space-y-2 border-t border-border pt-6">
               <Label className="text-destructive">Danger zone</Label>
