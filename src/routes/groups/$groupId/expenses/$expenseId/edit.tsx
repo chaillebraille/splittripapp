@@ -457,7 +457,7 @@ function EditExpensePage() {
           </div>
         </div>
 
-        {editable         {canEdit && (        {canEdit && ( (
+        {editable && (
         <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 p-4 backdrop-blur-sm">
           <div className="mx-auto max-w-md">
             <Button
