@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminUserIdRouteImport } from './routes/admin/$userId'
 import { Route as GroupsGroupIdRouteImport } from './routes/groups/$groupId'
 import { Route as GroupsNewRouteImport } from './routes/groups/new'
 import { Route as JoinCodeRouteImport } from './routes/join/$code'
@@ -41,6 +42,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUserIdRoute = AdminUserIdRouteImport.update({
+  id: '/admin/$userId',
+  path: '/admin/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupsGroupIdRoute = GroupsGroupIdRouteImport.update({
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/profile': typeof ProfileRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRouteWithChildren
   '/groups/new': typeof GroupsNewRoute
   '/join/$code': typeof JoinCodeRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/profile': typeof ProfileRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/groups/new': typeof GroupsNewRoute
   '/join/$code': typeof JoinCodeRoute
   '/admin': typeof AdminIndexRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/profile': typeof ProfileRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/groups/$groupId': typeof GroupsGroupIdRouteWithChildren
   '/groups/new': typeof GroupsNewRoute
   '/join/$code': typeof JoinCodeRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/profile'
+    | '/admin/$userId'
     | '/groups/$groupId'
     | '/groups/new'
     | '/join/$code'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/profile'
+    | '/admin/$userId'
     | '/groups/new'
     | '/join/$code'
     | '/admin'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/profile'
+    | '/admin/$userId'
     | '/groups/$groupId'
     | '/groups/new'
     | '/join/$code'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ProfileRoute: typeof ProfileRoute
+  AdminUserIdRoute: typeof AdminUserIdRoute
   GroupsGroupIdRoute: typeof GroupsGroupIdRouteWithChildren
   GroupsNewRoute: typeof GroupsNewRoute
   JoinCodeRoute: typeof JoinCodeRoute
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/$userId': {
+      id: '/admin/$userId'
+      path: '/admin/$userId'
+      fullPath: '/admin/$userId'
+      preLoaderRoute: typeof AdminUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/groups/$groupId': {
@@ -317,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ProfileRoute: ProfileRoute,
+  AdminUserIdRoute: AdminUserIdRoute,
   GroupsGroupIdRoute: GroupsGroupIdRouteWithChildren,
   GroupsNewRoute: GroupsNewRoute,
   JoinCodeRoute: JoinCodeRoute,
