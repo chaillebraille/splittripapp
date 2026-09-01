@@ -6,6 +6,13 @@ import { useAuth } from "@/lib/auth-provider";
 import { getStatus, setSyncEnabled, subscribeStatus, syncNow } from "@/lib/local/sync";
 import { ready } from "@/lib/local/store";
 import { refreshRates } from "@/lib/data/rates";
+import {
+  APP_VERSION,
+  applyAppUpdate,
+  fetchPublishedVersion,
+  getDeclinedVersion,
+  setDeclinedVersion,
+} from "@/lib/version";
 
 const MANUAL_SYNC_COOLDOWN_MS = 10_000;
 
