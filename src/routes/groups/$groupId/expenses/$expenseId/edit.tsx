@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -378,18 +378,9 @@ function EditExpensePage() {
             <div className="space-y-2">
               {members.map((m) => {
                 const selected = selectedMemberIds.has(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    disabled={!editable}
-                    onClick={() => toggleMember(m.id)}
-                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
-                      selected
-                        ? "border-primary bg-primary/5"
-                        : "border-input bg-card text-muted-foreground"
-                    }`}
-                  >
+                const splitAmount = (splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2);
+                const rowContent = (
+                  <>
                     <div className="flex items-center gap-3">
                       <span
                         className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
@@ -401,33 +392,49 @@ function EditExpensePage() {
                       <span className="font-medium text-foreground">{m.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {selected &&
-                        (splitMode === "custom" ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={customAmounts[m.id] ?? equalShare.toFixed(2)}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
-                            }
-                            placeholder="0.00"
-                            disabled={!editable}
-                            className="h-8 w-24 rounded-lg text-right"
-                          />
-                        ) : (
-                          <span className="text-sm font-semibold text-foreground">
-                            {(splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2)}{" "}
-                            {currency}
-                          </span>
-                        ))}
+                      {selected && (
+                        <span className="text-sm font-semibold text-foreground">
+                          {splitAmount} {currency}
+                        </span>
+                      )}
                       {selected ? (
                         <Check className="h-5 w-5 text-primary" />
                       ) : (
                         <Plus className="h-5 w-5 text-muted-foreground" />
                       )}
                     </div>
+                  </>
+                );
+
+                if (!editable) {
+                  return (
+                    <Link
+                      key={m.id}
+                      to="/groups/$groupId/members/$memberId"
+                      params={{ groupId, memberId: m.id }}
+                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-input bg-card text-muted-foreground"
+                      }`}
+                    >
+                      {rowContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggleMember(m.id)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "border-input bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {rowContent}
                   </button>
                 );
               })}
