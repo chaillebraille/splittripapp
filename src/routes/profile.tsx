@@ -57,10 +57,7 @@ function UserProfilePage() {
       toast.error(pwError);
       return;
     }
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-      ...(currentPassword ? { current_password: currentPassword } : {}),
-    } as Parameters<typeof supabase.auth.updateUser>[0]);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       toast.error(error.message);
       return;
