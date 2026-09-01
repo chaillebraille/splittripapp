@@ -160,6 +160,9 @@ function EditExpensePage() {
       : { member_id: s.member_id, amount: Number((s.amount * numericRate).toFixed(2)) }
   );
 
+  // Members with a zero share are dropped from the saved split.
+  const savedSplits = settleSplits.filter((s) => Math.abs(s.amount) >= 0.005);
+
   function useEqualSplit() {
     setSplitMode("equal");
   }
@@ -193,7 +196,7 @@ function EditExpensePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!description.trim() || numericAmount <= 0 || !payerId || splits.length === 0 || isSubmitting) {
+    if (!description.trim() || numericAmount <= 0 || !payerId || savedSplits.length === 0 || isSubmitting) {
       toast.error("Please fill in all fields and select at least one member.");
       return;
     }
@@ -214,7 +217,7 @@ function EditExpensePage() {
           description: description.trim(),
           expense_date: date,
           payer_id: payerId,
-          splits: settleSplits,
+          splits: savedSplits,
         },
       });
       queryClient.invalidateQueries({ queryKey: ["expenses", groupId] });
