@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, ShieldCheck, User, Users, Wallet } from "lucide-react";
+import { Plus, ShieldCheck, User, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -168,7 +168,6 @@ function HomePage() {
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-semibold text-card-foreground">{group.name}</h3>
                 </div>
-                <Users className="h-5 w-5 text-muted-foreground" />
               </Link>
             ))}
           </div>
@@ -176,22 +175,13 @@ function HomePage() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between px-6 py-3">
-          <Link
-            to="/"
-            className="flex flex-col items-center gap-1 text-sm font-medium text-primary"
-          >
-            <Wallet className="h-6 w-6" />
-            Trips
-          </Link>
+        <div className="mx-auto flex max-w-md items-center justify-center px-6 py-3">
           <Link
             to="/groups/new"
             className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
           >
             <Plus className="h-6 w-6" />
           </Link>
-          <span className="w-12" aria-hidden="true" />
-
         </div>
       </div>
     </div>
