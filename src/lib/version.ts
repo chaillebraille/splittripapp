@@ -1,11 +1,15 @@
 /**
  * App version.
  *
- * Bump APP_VERSION and public/version.json together on every publish.
- * The installed app compares its baked-in APP_VERSION with the published
- * /version.json to decide whether an update is available.
+ * Single source of truth: public/version.json.
+ * The value is baked into the bundle at build time (APP_VERSION) and also
+ * served live at /version.json, so the installed app can compare the two.
+ * Bump public/version.json only — never hardcode the number here.
  */
-export const APP_VERSION = 4;
+import versionJson from "../../public/version.json";
+
+export const APP_VERSION: number = versionJson.version;
+
 
 const DECLINED_KEY = "splittrip:declined-version";
 
@@ -34,16 +38,21 @@ export function setDeclinedVersion(version: number) {
 /** Refreshes the cached app shell and reloads into the new version. */
 export async function applyAppUpdate() {
   try {
-    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.allSettled(registrations.map((registration) => registration.update()));
-    }
     if (typeof caches !== "undefined") {
       const keys = await caches.keys();
       await Promise.allSettled(keys.map((key) => caches.delete(key)));
+    }
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.allSettled(registrations.map((registration) => registration.update()));
+      // Let a freshly installed worker take control so the reload serves the new bundle.
+      for (const registration of registrations) {
+        registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+      }
     }
   } catch {
     // Best effort — reload anyway.
   }
   window.location.reload();
 }
+
