@@ -2,10 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Copy, Eye, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { deleteGroup, getGroup, updateGroup } from "@/lib/data/groups";
+import { deleteGroup, forgetGroup, getGroup, updateGroup } from "@/lib/data/groups";
 import { createMember, deleteMember, listMembers, suggestMembers } from "@/lib/data/members";
 import {
   createInvite,
+  leaveTrip,
   listInvites,
   listShares,
   removeShare,
@@ -257,6 +258,7 @@ function TripProfilePage() {
   const [newMemberName, setNewMemberName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
     if (!group) return;
@@ -313,6 +315,21 @@ function TripProfilePage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete the trip");
       setIsDeleting(false);
+    }
+  }
+
+  async function handleLeaveTrip() {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    try {
+      await leaveTrip({ data: { group_id: groupId } });
+      await forgetGroup({ data: { id: groupId } });
+      await queryClient.invalidateQueries();
+      toast.success("Trip removed");
+      navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove the trip");
+      setIsLeaving(false);
     }
   }
 
