@@ -328,17 +328,19 @@ function NewExpensePage() {
                 const selected = selectedMemberIds.has(m.id);
                 const split = splits.find((s) => s.member_id === m.id);
                 return (
-                  <button
+                  <div
                     key={m.id}
-                    type="button"
-                    onClick={() => toggleMember(m.id)}
                     className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
                       selected
                         ? "border-primary bg-primary/5"
                         : "border-input bg-card text-muted-foreground"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleMember(m.id)}
+                      className="flex flex-1 items-center gap-3 text-left"
+                    >
                       <span
                         className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                           selected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
@@ -347,46 +349,56 @@ function NewExpensePage() {
                         {m.initial || m.name.slice(0, 1).toUpperCase()}
                       </span>
                       <span className="font-medium text-foreground">{m.name}</span>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-3">
                       {selected &&
                         (splitMode === "custom" ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={customAmounts[m.id] ?? equalShare.toFixed(2)}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
-                            }
-                            placeholder="0.00"
-                            className="h-8 w-24 rounded-lg text-right"
-                          />
+                          <div className="text-right">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              inputMode="decimal"
+                              value={customAmounts[m.id] ?? equalShare.toFixed(2)}
+                              onChange={(e) =>
+                                setCustomAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
+                              }
+                              placeholder="0.00"
+                              className="h-8 w-24 rounded-lg text-right"
+                            />
+                            {currency !== settleCurrency && (
+                              <span className="block text-xs text-muted-foreground">
+                                ≈ {splitSettleAmount(split?.amount ?? 0, numericRate).toFixed(2)}{" "}
+                                {settleCurrency}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-right text-sm font-semibold text-foreground">
-                            {(splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2)}{" "}
-                            {currency}
+                            {(split?.amount ?? 0).toFixed(2)} {currency}
                             {currency !== settleCurrency && (
                               <span className="block text-xs font-normal text-muted-foreground">
-                                ≈{" "}
-                                {splitSettleAmount(
-                                  splits.find((s) => s.member_id === m.id)?.amount ?? 0,
-                                  numericRate,
-                                ).toFixed(2)}{" "}
+                                ≈ {splitSettleAmount(split?.amount ?? 0, numericRate).toFixed(2)}{" "}
                                 {settleCurrency}
                               </span>
                             )}
                           </span>
                         ))}
-                      {selected ? (
-                        <Check className="h-5 w-5 text-primary" />
-                      ) : (
-                        <Plus className="h-5 w-5 text-muted-foreground" />
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleMember(m.id)}
+                        aria-label={selected ? `Remove ${m.name}` : `Add ${m.name}`}
+                      >
+                        {selected ? (
+                          <Check className="h-5 w-5 text-primary" />
+                        ) : (
+                          <Plus className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
+
               })}
             </div>
 
