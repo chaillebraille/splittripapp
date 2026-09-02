@@ -77,7 +77,6 @@ export async function createExpense({
 }: {
   data: {
     group_id: string;
-    amount: number;
     currency: string;
     exchange_rate: number;
     description: string;
@@ -90,10 +89,8 @@ export async function createExpense({
   const expense: LocalExpense = {
     id: newId(),
     group_id: data.group_id,
-    amount: data.amount,
     currency: data.currency.toUpperCase(),
     exchange_rate: data.exchange_rate,
-    settle_amount: Number((data.amount * data.exchange_rate).toFixed(4)),
     description: data.description.trim(),
     expense_date: data.expense_date,
     payer_id: data.payer_id,
@@ -109,7 +106,6 @@ export async function updateExpense({
   data: {
     id: string;
     group_id?: string;
-    amount?: number;
     currency?: string;
     exchange_rate?: number;
     description?: string;
@@ -124,14 +120,12 @@ export async function updateExpense({
 
   const updated: LocalExpense = {
     ...existing,
-    ...(data.amount !== undefined ? { amount: data.amount } : {}),
     ...(data.currency !== undefined ? { currency: data.currency.toUpperCase() } : {}),
     ...(data.exchange_rate !== undefined ? { exchange_rate: data.exchange_rate } : {}),
     ...(data.description !== undefined ? { description: data.description.trim() } : {}),
     ...(data.expense_date !== undefined ? { expense_date: data.expense_date } : {}),
     ...(data.payer_id !== undefined ? { payer_id: data.payer_id } : {}),
   };
-  updated.settle_amount = Number((updated.amount * updated.exchange_rate).toFixed(4));
 
   const splits =
     data.splits ??

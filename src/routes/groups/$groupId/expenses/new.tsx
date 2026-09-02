@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { round2, splitSettleAmount } from "@/lib/amounts";
 import { getGroup } from "@/lib/data/groups";
 import { listMembers, suggestMembers } from "@/lib/data/members";
 import { createExpense, listExpenses } from "@/lib/data/expenses";
@@ -104,7 +105,7 @@ function NewExpensePage() {
 
   const numericAmount = Number(amount) || 0;
   const numericRate = Number(exchangeRate) || 1;
-  const settleAmount = numericAmount * numericRate;
+  const settleAmount = round2(numericAmount * numericRate);
   const settleCurrency = group?.settle_currency ?? "EUR";
 
   const selectedMembers = useMemo(
@@ -138,25 +139,8 @@ function NewExpensePage() {
   const splitDifference = Number((numericAmount - splitTotal).toFixed(2));
   const splitsBalanced = Math.abs(splitDifference) < 0.005;
 
-  // Splits are entered in the expense currency; store them in the trip settle currency.
-  const settleSplits = splits.map((s, i) =>
-    i === splits.length - 1
-      ? {
-          member_id: s.member_id,
-          amount: Number(
-            (
-              settleAmount -
-              splits
-                .slice(0, -1)
-                .reduce((sum, other) => sum + Number((other.amount * numericRate).toFixed(2)), 0)
-            ).toFixed(2)
-          ),
-        }
-      : { member_id: s.member_id, amount: Number((s.amount * numericRate).toFixed(2)) }
-  );
-
-  // Members with a zero share are dropped from the saved split.
-  const savedSplits = settleSplits.filter((s) => Math.abs(s.amount) >= 0.005);
+  // Splits are stored in the expense currency; members with a zero share are dropped.
+  const savedSplits = splits.filter((s) => Math.abs(s.amount) >= 0.005);
 
   function useEqualSplit() {
     setSplitMode("equal");
@@ -205,7 +189,6 @@ function NewExpensePage() {
       await create({
         data: {
           group_id: groupId,
-          amount: numericAmount,
           currency: currency.toUpperCase(),
           exchange_rate: numericRate,
           description: description.trim(),
@@ -381,9 +364,19 @@ function NewExpensePage() {
                             className="h-8 w-24 rounded-lg text-right"
                           />
                         ) : (
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-right text-sm font-semibold text-foreground">
                             {(splits.find((s) => s.member_id === m.id)?.amount ?? 0).toFixed(2)}{" "}
                             {currency}
+                            {currency !== settleCurrency && (
+                              <span className="block text-xs font-normal text-muted-foreground">
+                                ≈{" "}
+                                {splitSettleAmount(
+                                  splits.find((s) => s.member_id === m.id)?.amount ?? 0,
+                                  numericRate,
+                                ).toFixed(2)}{" "}
+                                {settleCurrency}
+                              </span>
+                            )}
                           </span>
                         ))}
                       {selected ? (
