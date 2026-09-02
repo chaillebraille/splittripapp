@@ -12,13 +12,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { expenseSettleTotal, expenseTotal } from "@/lib/amounts";
 
 export type ExpenseListItem = {
   id: string;
   description: string | null;
-  amount: number;
   currency: string;
-  settle_amount: number | null;
+  exchange_rate: number;
+  expense_splits: { member_id: string; amount: number }[];
   expense_date: string;
   payer_id: string | null;
 };
@@ -58,12 +59,12 @@ function ExpenseRow({
       </div>
       <div className="text-right">
         <p className="font-semibold text-card-foreground">
-          {expense.amount} {expense.currency}
+          {expenseTotal(expense.expense_splits).toFixed(2)} {expense.currency}
         </p>
         <p className="text-xs text-muted-foreground">
           {shareAmounts
             ? `Your share: ${Number(shareAmounts[expense.id] ?? 0).toFixed(2)} ${settleCurrency ?? ""}`
-            : `≈ ${Number(expense.settle_amount ?? 0).toFixed(2)} ${settleCurrency ?? ""}`}
+            : `≈ ${expenseSettleTotal(expense.expense_splits, expense.exchange_rate).toFixed(2)} ${settleCurrency ?? ""}`}
         </p>
       </div>
     </>

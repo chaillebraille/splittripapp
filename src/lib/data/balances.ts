@@ -1,4 +1,5 @@
 import { getState, ready } from "@/lib/local/store";
+import { expenseSettleTotal, splitSettleAmount } from "@/lib/amounts";
 
 export type Balance = {
   member_id: string;
@@ -28,11 +29,14 @@ export async function getBalances({ data }: { data: { group_id: string } }) {
 
   for (const expense of expenses) {
     const entry = balances.get(expense.payer_id);
-    if (entry) entry.paid += Number(expense.settle_amount ?? expense.amount * expense.exchange_rate);
+    if (!entry) continue;
+    const expenseSplits = splits.filter((s) => s.expense_id === expense.id);
+    entry.paid += expenseSettleTotal(expenseSplits, expense.exchange_rate);
   }
   for (const split of splits) {
     const entry = balances.get(split.member_id);
-    if (entry) entry.owed += Number(split.amount);
+    const expense = expenses.find((e) => e.id === split.expense_id);
+    if (entry && expense) entry.owed += splitSettleAmount(split.amount, expense.exchange_rate);
   }
 
   const balanceList: Balance[] = members.map((member) => {
