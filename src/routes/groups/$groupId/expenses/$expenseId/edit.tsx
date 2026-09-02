@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { expenseSettleTotal, expenseTotal, round2, splitSettleAmount } from "@/lib/amounts";
 import { getGroup } from "@/lib/data/groups";
 import { listMembers } from "@/lib/data/members";
 import { getExpense, updateExpense } from "@/lib/data/expenses";
@@ -61,11 +62,16 @@ function EditExpensePage() {
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  /** Settle total as loaded from the stored splits; cleared once amount or rate changes. */
+  const [loadedSettleTotal, setLoadedSettleTotal] = useState<number | null>(null);
+  const [currencyTouched, setCurrencyTouched] = useState(false);
 
   useEffect(() => {
     if (!expense) return;
     setDescription(expense.description ?? "");
-    setAmount(String(expense.amount));
+    const loadedSplits = expense.expense_splits ?? [];
+    setAmount(expenseTotal(loadedSplits).toFixed(2));
+    setLoadedSettleTotal(expenseSettleTotal(loadedSplits, Number(expense.exchange_rate) || 1));
     setCurrency(expense.currency);
     setExchangeRate(String(expense.exchange_rate));
     setDate(expense.expense_date);
@@ -73,16 +79,14 @@ function EditExpensePage() {
     const splitMemberIds = new Set((expense.expense_splits ?? []).map((s) => s.member_id));
     setSelectedMemberIds(splitMemberIds);
 
-    const splits = expense.expense_splits ?? [];
-    const rate = Number(expense.exchange_rate) || 1;
-    // Stored splits are in the settle currency; the form works in the expense currency.
-    const equalShare = Number(expense.amount) / (splits.length || 1);
-    const isEqual = splits.every((s) => Math.abs(Number(s.amount) / rate - equalShare) < 0.01);
+    const splits = loadedSplits;
+    const equalShare = expenseTotal(splits) / (splits.length || 1);
+    const isEqual = splits.every((s) => Math.abs(Number(s.amount) - equalShare) < 0.01);
     setSplitMode(isEqual ? "equal" : "custom");
 
     const amounts: Record<string, string> = {};
     for (const s of splits) {
-      amounts[s.member_id] = (Number(s.amount) / rate).toFixed(2);
+      amounts[s.member_id] = Number(s.amount).toFixed(2);
     }
     setCustomAmounts(amounts);
   }, [expense]);
@@ -90,6 +94,8 @@ function EditExpensePage() {
   useEffect(() => {
     let cancelled = false;
     async function fetch() {
+      if (!currencyTouched) return;
+      setLoadedSettleTotal(null);
       if (!group?.settle_currency || currency === group.settle_currency) {
         setExchangeRate("1");
         return;
@@ -105,13 +111,13 @@ function EditExpensePage() {
     return () => {
       cancelled = true;
     };
-  }, [currency, group?.settle_currency]);
+  }, [currency, group?.settle_currency, currencyTouched]);
 
   const canEdit = (group?.my_role ?? "owner") !== "viewer";
   const editable = canEdit && editing;
   const numericAmount = Number(amount) || 0;
   const numericRate = Number(exchangeRate) || 1;
-  const settleAmount = numericAmount * numericRate;
+  const settleAmount = loadedSettleTotal ?? round2(numericAmount * numericRate);
   const settleCurrency = group?.settle_currency ?? "EUR";
 
   const selectedMembers = useMemo(
@@ -145,25 +151,8 @@ function EditExpensePage() {
   const splitDifference = Number((numericAmount - splitTotal).toFixed(2));
   const splitsBalanced = Math.abs(splitDifference) < 0.005;
 
-  // Splits are entered in the expense currency; store them in the trip settle currency.
-  const settleSplits = splits.map((s, i) =>
-    i === splits.length - 1
-      ? {
-          member_id: s.member_id,
-          amount: Number(
-            (
-              settleAmount -
-              splits
-                .slice(0, -1)
-                .reduce((sum, other) => sum + Number((other.amount * numericRate).toFixed(2)), 0)
-            ).toFixed(2)
-          ),
-        }
-      : { member_id: s.member_id, amount: Number((s.amount * numericRate).toFixed(2)) }
-  );
-
-  // Members with a zero share are dropped from the saved split.
-  const savedSplits = settleSplits.filter((s) => Math.abs(s.amount) >= 0.005);
+  // Splits are stored in the expense currency; members with a zero share are dropped.
+  const savedSplits = splits.filter((s) => Math.abs(s.amount) >= 0.005);
 
   function useEqualSplit() {
     setSplitMode("equal");
@@ -213,7 +202,6 @@ function EditExpensePage() {
         data: {
           id: expenseId,
           group_id: groupId,
-          amount: numericAmount,
           currency: currency.toUpperCase(),
           exchange_rate: numericRate,
           description: description.trim(),
@@ -289,7 +277,10 @@ function EditExpensePage() {
                 step="0.01"
                 min="0"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setLoadedSettleTotal(null);
+                  setAmount(e.target.value);
+                }}
                 placeholder="0.00"
                 disabled={!editable}
                 className="rounded-xl"
@@ -297,7 +288,10 @@ function EditExpensePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <CurrencyPicker id="currency" value={currency} onChange={setCurrency} disabled={!editable} title="Expense currency" />
+              <CurrencyPicker id="currency" value={currency} onChange={(v) => {
+                setCurrencyTouched(true);
+                setCurrency(v);
+              }} disabled={!editable} title="Expense currency" />
             </div>
           </div>
 
@@ -309,7 +303,10 @@ function EditExpensePage() {
               step="0.000001"
               min="0"
               value={exchangeRate}
-              onChange={(e) => setExchangeRate(e.target.value)}
+              onChange={(e) => {
+                setLoadedSettleTotal(null);
+                setExchangeRate(e.target.value);
+              }}
               disabled={!editable}
               className="rounded-xl"
             />
@@ -393,8 +390,14 @@ function EditExpensePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       {selected && (
-                        <span className="text-sm font-semibold text-foreground">
+                        <span className="text-right text-sm font-semibold text-foreground">
                           {splitAmount} {currency}
+                          {currency !== settleCurrency && (
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              ≈ {splitSettleAmount(Number(splitAmount), numericRate).toFixed(2)}{" "}
+                              {settleCurrency}
+                            </span>
+                          )}
                         </span>
                       )}
                       {selected ? (

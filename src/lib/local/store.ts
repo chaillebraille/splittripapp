@@ -39,10 +39,8 @@ export type LocalSplit = {
 export type LocalExpense = {
   id: string;
   group_id: string;
-  amount: number;
   currency: string;
   exchange_rate: number;
-  settle_amount: number;
   description: string;
   expense_date: string;
   payer_id: string;

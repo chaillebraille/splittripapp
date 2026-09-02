@@ -8,6 +8,7 @@ import { deleteExpense, listExpenses } from "@/lib/data/expenses";
 import { getBalances } from "@/lib/data/balances";
 import { ExpenseList } from "@/components/ExpenseList";
 import { toast } from "sonner";
+import { expenseSettleTotal, splitSettleAmount } from "@/lib/amounts";
 
 export const Route = createFileRoute("/groups/$groupId/members/$memberId")({
   ssr: false,
@@ -64,10 +65,14 @@ function MemberPage() {
     const split = ((e.expense_splits ?? []) as { member_id: string; amount: number }[]).find(
       (s) => s.member_id === memberId
     );
-    if (split) shareAmounts[e.id] = Number(split.amount ?? 0);
+    if (split)
+      shareAmounts[e.id] = splitSettleAmount(Number(split.amount ?? 0), Number(e.exchange_rate) || 1);
   }
   const sharedExpenses = expenses.filter((e) => shareAmounts[e.id] !== undefined);
-  const totalPaid = paidExpenses.reduce((sum, e) => sum + Number(e.settle_amount ?? 0), 0);
+  const totalPaid = paidExpenses.reduce(
+    (sum, e) => sum + expenseSettleTotal(e.expense_splits ?? [], Number(e.exchange_rate) || 1),
+    0,
+  );
   const net = memberBalance?.net ?? 0;
 
 

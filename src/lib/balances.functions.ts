@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { expenseSettleTotal, splitSettleAmount } from "@/lib/amounts";
 
 export type Balance = {
   member_id: string;
@@ -30,7 +31,7 @@ export const getBalances = createServerFn({ method: "GET" })
 
     const { data: expenses, error: expensesError } = await context.supabase
       .from("expenses")
-      .select("amount, exchange_rate, settle_amount, payer_id, expense_splits(member_id, amount)")
+      .select("exchange_rate, payer_id, expense_splits(member_id, amount)")
       .eq("group_id", data.group_id);
 
     if (expensesError) throw new Error(expensesError.message);
@@ -48,11 +49,17 @@ export const getBalances = createServerFn({ method: "GET" })
     for (const expense of expenses ?? []) {
       const payerId = expense.payer_id;
       if (payerId && balances.has(payerId)) {
-        balances.get(payerId)!.paid += Number(expense.settle_amount ?? expense.amount * expense.exchange_rate);
+        balances.get(payerId)!.paid += expenseSettleTotal(
+          expense.expense_splits ?? [],
+          Number(expense.exchange_rate),
+        );
       }
       for (const split of (expense.expense_splits ?? []) as { member_id: string; amount: number }[]) {
         if (balances.has(split.member_id)) {
-          balances.get(split.member_id)!.owed += Number(split.amount);
+          balances.get(split.member_id)!.owed += splitSettleAmount(
+            Number(split.amount),
+            Number(expense.exchange_rate),
+          );
         }
       }
     }

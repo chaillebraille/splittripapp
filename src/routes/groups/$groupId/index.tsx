@@ -8,6 +8,7 @@ import { deleteExpense, listExpenses } from "@/lib/data/expenses";
 import { getBalances } from "@/lib/data/balances";
 import { ExpenseList } from "@/components/ExpenseList";
 import { toast } from "sonner";
+import { expenseSettleTotal } from "@/lib/amounts";
 
 export const Route = createFileRoute("/groups/$groupId/")({
   head: () => ({
@@ -58,7 +59,10 @@ function GroupDashboardPage() {
 
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
-  const totalExpense = expenses.reduce((sum, e) => sum + Number(e.settle_amount ?? 0), 0);
+  const totalExpense = expenses.reduce(
+    (sum, e) => sum + expenseSettleTotal(e.expense_splits ?? [], Number(e.exchange_rate) || 1),
+    0,
+  );
 
   async function handleDeleteExpense(id: string) {
     if (deletingExpenseId) return;

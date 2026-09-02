@@ -9,7 +9,6 @@ const splitSchema = z.object({
 
 const createExpenseSchema = z.object({
   group_id: z.string().uuid(),
-  amount: z.number().positive(),
   currency: z.string().length(3).toUpperCase(),
   exchange_rate: z.number().positive(),
   description: z.string().min(1).max(200),
@@ -55,7 +54,6 @@ export const createExpense = createServerFn({ method: "POST" })
       .from("expenses")
       .insert({
         group_id: data.group_id,
-        amount: data.amount,
         currency: data.currency,
         exchange_rate: data.exchange_rate,
         description: data.description,
@@ -95,7 +93,6 @@ export const updateExpense = createServerFn({ method: "POST" })
     const { data: expense, error: expenseError } = await context.supabase
       .from("expenses")
       .update({
-        ...(updates.amount !== undefined ? { amount: updates.amount } : {}),
         ...(updates.currency !== undefined ? { currency: updates.currency } : {}),
         ...(updates.exchange_rate !== undefined ? { exchange_rate: updates.exchange_rate } : {}),
         ...(updates.description !== undefined ? { description: updates.description } : {}),
@@ -140,10 +137,8 @@ export const deleteExpense = createServerFn({ method: "POST" })
 const upsertExpenseSchema = z.object({
   id: z.string().uuid(),
   group_id: z.string().uuid(),
-  amount: z.number().positive(),
   currency: z.string().length(3).toUpperCase(),
   exchange_rate: z.number().positive(),
-  settle_amount: z.number(),
   description: z.string().min(1).max(200),
   expense_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   payer_id: z.string().uuid(),
@@ -155,8 +150,7 @@ export const upsertExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => upsertExpenseSchema.parse(data))
   .handler(async ({ context, data }) => {
-    // settle_amount is a generated column in the database.
-    const { splits, settle_amount: _settleAmount, ...expense } = data;
+    const { splits, ...expense } = data;
 
     const { error: expenseError } = await context.supabase
       .from("expenses")
