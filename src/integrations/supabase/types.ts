@@ -58,7 +58,6 @@ export type Database = {
       }
       expenses: {
         Row: {
-          amount: number
           created_at: string
           created_by: string | null
           currency: string
@@ -68,11 +67,9 @@ export type Database = {
           group_id: string
           id: string
           payer_id: string | null
-          settle_amount: number | null
           updated_at: string
         }
         Insert: {
-          amount: number
           created_at?: string
           created_by?: string | null
           currency: string
@@ -82,11 +79,9 @@ export type Database = {
           group_id: string
           id?: string
           payer_id?: string | null
-          settle_amount?: number | null
           updated_at?: string
         }
         Update: {
-          amount?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -96,7 +91,6 @@ export type Database = {
           group_id?: string
           id?: string
           payer_id?: string | null
-          settle_amount?: number | null
           updated_at?: string
         }
         Relationships: [
