@@ -41,7 +41,7 @@ export const pullAll = createServerFn({ method: "GET" })
     const { data: expenses, error: expensesError } = await context.supabase
       .from("expenses")
       .select(
-        "id, group_id, amount, currency, exchange_rate, settle_amount, description, expense_date, payer_id, created_at",
+        "id, group_id, currency, exchange_rate, description, expense_date, payer_id, created_at",
       )
       .in("group_id", groupIds);
     if (expensesError) throw new Error(expensesError.message);
