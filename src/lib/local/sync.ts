@@ -187,10 +187,8 @@ export async function syncNow(): Promise<boolean> {
       expenses: snapshot.expenses.map((e) => ({
         id: e.id,
         group_id: e.group_id,
-        amount: Number(e.amount),
         currency: e.currency,
         exchange_rate: Number(e.exchange_rate),
-        settle_amount: Number(e.settle_amount ?? Number(e.amount) * Number(e.exchange_rate)),
         description: e.description ?? "",
         expense_date: e.expense_date,
         payer_id: e.payer_id as string,
