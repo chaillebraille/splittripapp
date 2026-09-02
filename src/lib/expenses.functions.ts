@@ -9,7 +9,6 @@ const splitSchema = z.object({
 
 const createExpenseSchema = z.object({
   group_id: z.string().uuid(),
-  amount: z.number().positive(),
   currency: z.string().length(3).toUpperCase(),
   exchange_rate: z.number().positive(),
   description: z.string().min(1).max(200),
