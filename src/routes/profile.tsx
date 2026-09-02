@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, KeyRound, LogOut, RefreshCw } from "lucide-react";
+import { ArrowLeft, KeyRound, LogOut, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-provider";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/profile")({
 
 function UserProfilePage() {
   const navigate = useNavigate();
-  const { userId, displayName, signOut } = useAuth();
+  const { userId, displayName, isAdmin, signOut } = useAuth();
   const [memberName, setMemberName] = useState(() => readCachedMemberName(userId) ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
@@ -140,6 +140,13 @@ function UserProfilePage() {
           </p>
         </div>
 
+        {isAdmin && (
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <ShieldCheck className="h-5 w-5 text-green-500" aria-label="Admin" />
+            You are an administrator
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="member-name">Member name</Label>
           <Input
@@ -153,14 +160,6 @@ function UserProfilePage() {
             New trips start with this member already added.
           </p>
         </div>
-
-        <Button
-          type="submit"
-          disabled={!memberName.trim() || isSaving}
-          className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
-        >
-          Save profile
-        </Button>
 
         <AlertDialog open={pwOpen} onOpenChange={openPasswordDialog}>
           <AlertDialogTrigger asChild>
@@ -215,6 +214,14 @@ function UserProfilePage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Button
+          type="submit"
+          disabled={!memberName.trim() || isSaving}
+          className="w-full rounded-xl bg-primary py-6 text-base font-semibold text-primary-foreground"
+        >
+          Save profile
+        </Button>
       </form>
 
     </div>
