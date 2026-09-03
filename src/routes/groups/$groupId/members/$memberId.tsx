@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Home, Plus, Users } from "lucide-react";
+import { ArrowLeft, Home, Users } from "lucide-react";
 import { useState } from "react";
 import { getGroup } from "@/lib/data/groups";
 import { listMembers } from "@/lib/data/members";
