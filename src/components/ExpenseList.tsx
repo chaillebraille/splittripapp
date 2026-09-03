@@ -35,8 +35,8 @@ type Props = {
   canEdit?: boolean;
   emptyLabel?: string;
   /** Optional navigation target for the empty state. */
-  emptyTo?: string;
-  emptyParams?: Record<string, string>;
+  emptyTo?: string | undefined;
+  emptyParams?: Record<string, string> | undefined;
   /** When provided, the secondary line shows "Your share: <amount>" instead of the converted total. */
   shareAmounts?: Record<string, number>;
 };
@@ -100,7 +100,7 @@ export function ExpenseList({
       return (
         <Link
           to={emptyTo}
-          params={emptyParams}
+          {...(emptyParams ? { params: emptyParams } : {})}
           className="block rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm transition-transform active:scale-[0.99]"
         >
           {emptyContent}
