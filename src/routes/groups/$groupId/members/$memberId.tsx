@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Home, Plus, Users } from "lucide-react";
+import { ArrowLeft, Home, Users } from "lucide-react";
 import { useState } from "react";
 import { getGroup } from "@/lib/data/groups";
 import { listMembers } from "@/lib/data/members";
@@ -194,7 +194,7 @@ function MemberPage() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-md items-center justify-around px-6 py-3">
+        <div className="mx-auto flex max-w-md items-center justify-between px-6 py-3">
           <Link
             to="/groups/$groupId"
             params={{ groupId }}
@@ -203,19 +203,6 @@ function MemberPage() {
             <Home className="h-6 w-6" />
             Expenses
           </Link>
-          {canWrite ? (
-            <Link
-              to="/groups/$groupId/expenses/new"
-              params={{ groupId }}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95"
-            >
-              <Plus className="h-6 w-6" />
-            </Link>
-          ) : (
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-              View
-            </span>
-          )}
           <Link
             to="/groups/$groupId/settle"
             params={{ groupId }}
