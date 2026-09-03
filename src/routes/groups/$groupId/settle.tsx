@@ -165,10 +165,6 @@ function SettlePage() {
               View
             </span>
           )}
-          <span className="flex flex-col items-center gap-1 text-sm font-medium text-primary">
-            <Users className="h-6 w-6" />
-            Settle
-          </span>
         </div>
       </div>
     </div>
