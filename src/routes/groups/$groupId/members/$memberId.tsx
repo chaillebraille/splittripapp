@@ -194,7 +194,7 @@ function MemberPage() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between px-6 py-3">
+        <div className="mx-auto grid max-w-md grid-cols-3 items-center px-6 py-3">
           <Link
             to="/groups/$groupId"
             params={{ groupId }}
@@ -203,6 +203,7 @@ function MemberPage() {
             <Home className="h-6 w-6" />
             Expenses
           </Link>
+          <div />
           <Link
             to="/groups/$groupId/settle"
             params={{ groupId }}
