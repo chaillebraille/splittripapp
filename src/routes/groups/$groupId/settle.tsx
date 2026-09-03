@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRightLeft, Home, Plus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Home, Plus, Wallet } from "lucide-react";
 import { getGroup } from "@/lib/data/groups";
 import { listMembers } from "@/lib/data/members";
 import { getBalances } from "@/lib/data/balances";
@@ -165,10 +165,6 @@ function SettlePage() {
               View
             </span>
           )}
-          <span className="flex flex-col items-center gap-1 text-sm font-medium text-primary">
-            <Users className="h-6 w-6" />
-            Settle
-          </span>
         </div>
       </div>
     </div>
