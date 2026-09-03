@@ -34,6 +34,9 @@ type Props = {
   /** When false, rows are read-only: no edit navigation and no delete button. */
   canEdit?: boolean;
   emptyLabel?: string;
+  /** Optional navigation target for the empty state. */
+  emptyTo?: string;
+  emptyParams?: Record<string, string>;
   /** When provided, the secondary line shows "Your share: <amount>" instead of the converted total. */
   shareAmounts?: Record<string, number>;
 };
@@ -80,15 +83,33 @@ export function ExpenseList({
   onDelete,
   canEdit = true,
   emptyLabel = "No expenses yet.",
+  emptyTo,
+  emptyParams,
   shareAmounts,
 }: Props) {
   const [pendingDelete, setPendingDelete] = useState<ExpenseListItem | null>(null);
 
   if (expenses.length === 0) {
-    return (
-      <div className="rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm">
+    const emptyContent = (
+      <>
         <Receipt className="mx-auto mb-2 h-8 w-8" />
         {emptyLabel}
+      </>
+    );
+    if (emptyTo) {
+      return (
+        <Link
+          to={emptyTo}
+          params={emptyParams}
+          className="block rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm transition-transform active:scale-[0.99]"
+        >
+          {emptyContent}
+        </Link>
+      );
+    }
+    return (
+      <div className="rounded-2xl bg-card p-6 text-center text-muted-foreground shadow-sm">
+        {emptyContent}
       </div>
     );
   }

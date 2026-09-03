@@ -169,6 +169,8 @@ function GroupDashboardPage() {
             deletingExpenseId={deletingExpenseId}
             onDelete={handleDeleteExpense}
             canEdit={canWrite}
+            emptyTo={canWrite ? "/groups/$groupId/expenses/new" : undefined}
+            emptyParams={{ groupId }}
           />
         </section>
       </main>
